@@ -15,7 +15,6 @@
  Date: 17/04/2025 21:47:14
 */
 
-
 -- ----------------------------
 -- Sequence structure for t_smart_job_log_log_id_seq
 -- ----------------------------
@@ -32,13 +31,13 @@ CACHE 1;
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_category";
 CREATE TABLE "public"."t_category" (
-  "category_id" int4 NOT NULL,
+  "category_id" SERIAL,
   "category_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "category_type" int2 NOT NULL,
   "parent_id" int4 NOT NULL,
   "sort" int4 NOT NULL,
-  "disabled_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "remark" varchar(255) COLLATE "pg_catalog"."default",
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -74,7 +73,7 @@ INSERT INTO "public"."t_category" VALUES (360, 'iphone', 1, 352, 0, 'f', 'f', NU
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_change_log";
 CREATE TABLE "public"."t_change_log" (
-  "change_log_id" int8 NOT NULL,
+  "change_log_id" BIGSERIAL,
   "version" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "type" int4 NOT NULL,
   "publish_author" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
@@ -230,7 +229,7 @@ COMMENT ON TABLE "public"."t_code_generator_config" IS '代码生成器的每个
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_config";
 CREATE TABLE "public"."t_config" (
-  "config_id" int8 NOT NULL,
+  "config_id" BIGSERIAL,
   "config_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "config_key" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "config_value" text COLLATE "pg_catalog"."default" NOT NULL,
@@ -267,7 +266,7 @@ INSERT INTO "public"."t_config" VALUES (2, '三级等保', 'level3_protect_confi
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_data_tracer";
 CREATE TABLE "public"."t_data_tracer" (
-  "data_tracer_id" int8 NOT NULL,
+  "data_tracer_id" BIGSERIAL,
   "data_id" int8 NOT NULL,
   "type" int4 NOT NULL,
   "content" text COLLATE "pg_catalog"."default",
@@ -319,7 +318,7 @@ INSERT INTO "public"."t_data_tracer" VALUES (99, 12, 1, '', NULL, NULL, NULL, 1,
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_department";
 CREATE TABLE "public"."t_department" (
-  "department_id" int8 NOT NULL,
+  "department_id" BIGSERIAL,
   "name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "manager_id" int8,
   "parent_id" int8 NOT NULL,
@@ -353,11 +352,11 @@ INSERT INTO "public"."t_department" VALUES (8, '抖音组', 47, 7, 0, '2024-07-0
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_dict";
 CREATE TABLE "public"."t_dict" (
-  "dict_id" int8 NOT NULL,
+  "dict_id" BIGSERIAL,
   "dict_name" varchar(500) COLLATE "pg_catalog"."default" NOT NULL,
   "dict_code" varchar(500) COLLATE "pg_catalog"."default" NOT NULL,
   "remark" varchar(1000) COLLATE "pg_catalog"."default",
-  "disabled_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
@@ -381,13 +380,13 @@ INSERT INTO "public"."t_dict" VALUES (1, '商品地区', 'GOODS_PLACE', '用于�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_dict_data";
 CREATE TABLE "public"."t_dict_data" (
-  "dict_data_id" int8 NOT NULL,
+  "dict_data_id" BIGSERIAL,
   "dict_id" int8 NOT NULL,
   "data_value" varchar(500) COLLATE "pg_catalog"."default" NOT NULL,
   "data_label" varchar(500) COLLATE "pg_catalog"."default" NOT NULL,
   "remark" varchar(1000) COLLATE "pg_catalog"."default",
   "sort_order" int4 NOT NULL,
-  "disabled_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
@@ -416,7 +415,7 @@ INSERT INTO "public"."t_dict_data" VALUES (8, 1, 'SHANG_HAI', '上海', '', 0, '
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_employee";
 CREATE TABLE "public"."t_employee" (
-  "employee_id" int8 NOT NULL,
+  "employee_id" BIGSERIAL,
   "login_name" varchar(30) COLLATE "pg_catalog"."default" NOT NULL,
   "login_pwd" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "actual_name" varchar(30) COLLATE "pg_catalog"."default" NOT NULL,
@@ -426,9 +425,9 @@ CREATE TABLE "public"."t_employee" (
   "department_id" int8 NOT NULL,
   "position_id" int8,
   "email" varchar(100) COLLATE "pg_catalog"."default",
-  "disabled_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
-  "administrator_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
+  "administrator_flag" bool NOT NULL  DEFAULT FALSE,
   "remark" varchar(200) COLLATE "pg_catalog"."default",
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -474,7 +473,7 @@ INSERT INTO "public"."t_employee" VALUES (69, 'peixian', '$argon2id$v=19$m=16384
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_feedback";
 CREATE TABLE "public"."t_feedback" (
-  "feedback_id" int8 NOT NULL,
+  "feedback_id" BIGSERIAL,
   "feedback_content" text COLLATE "pg_catalog"."default",
   "feedback_attachment" varchar(500) COLLATE "pg_catalog"."default",
   "user_id" int8 NOT NULL,
@@ -503,7 +502,7 @@ COMMENT ON TABLE "public"."t_feedback" IS '意见反馈';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_file";
 CREATE TABLE "public"."t_file" (
-  "file_id" int8 NOT NULL,
+  "file_id" BIGSERIAL,
   "folder_type" int2 NOT NULL,
   "file_name" varchar(100) COLLATE "pg_catalog"."default",
   "file_size" int4,
@@ -538,14 +537,14 @@ COMMENT ON TABLE "public"."t_file" IS '文件';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_goods";
 CREATE TABLE "public"."t_goods" (
-  "goods_id" int4 NOT NULL,
+  "goods_id" SERIAL,
   "goods_status" int4,
   "category_id" int4 NOT NULL,
   "goods_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "place" varchar(255) COLLATE "pg_catalog"."default",
   "price" numeric(10,2) NOT NULL,
-  "shelves_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
+  "shelves_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "remark" varchar(255) COLLATE "pg_catalog"."default",
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -576,7 +575,7 @@ INSERT INTO "public"."t_goods" VALUES (12, 1, 356, '罗技双模鼠标', 'BEI_JI
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_heart_beat_record";
 CREATE TABLE "public"."t_heart_beat_record" (
-  "heart_beat_record_id" int4 NOT NULL,
+  "heart_beat_record_id" SERIAL,
   "project_path" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "server_ip" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
   "process_no" int4 NOT NULL,
@@ -601,7 +600,7 @@ COMMENT ON TABLE "public"."t_heart_beat_record" IS '公用服务 - 服务心跳'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_help_doc";
 CREATE TABLE "public"."t_help_doc" (
-  "help_doc_id" int8 NOT NULL,
+  "help_doc_id" BIGSERIAL,
   "help_doc_catalog_id" int8 NOT NULL,
   "title" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
   "content_text" text COLLATE "pg_catalog"."default" NOT NULL,
@@ -637,7 +636,7 @@ INSERT INTO "public"."t_help_doc" VALUES (33, 6, '谁有权限查看企业信息
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_help_doc_catalog";
 CREATE TABLE "public"."t_help_doc_catalog" (
-  "help_doc_catalog_id" int8 NOT NULL,
+  "help_doc_catalog_id" BIGSERIAL,
   "name" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
   "sort" int4 NOT NULL,
   "parent_id" int8 NOT NULL,
@@ -718,7 +717,7 @@ COMMENT ON TABLE "public"."t_help_doc_view_record" IS '帮助文档-查看记录
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_login_fail";
 CREATE TABLE "public"."t_login_fail" (
-  "login_fail_id" int8 NOT NULL,
+  "login_fail_id" BIGSERIAL,
   "user_id" int8 NOT NULL,
   "user_type" int4 NOT NULL,
   "login_name" varchar(1000) COLLATE "pg_catalog"."default",
@@ -749,7 +748,7 @@ COMMENT ON TABLE "public"."t_login_fail" IS '登录失败次数记录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_login_log";
 CREATE TABLE "public"."t_login_log" (
-  "login_log_id" int8 NOT NULL,
+  "login_log_id" BIGSERIAL,
   "user_id" int4 NOT NULL,
   "user_type" int4 NOT NULL,
   "user_name" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
@@ -790,7 +789,7 @@ CREATE TABLE "public"."t_mail_template" (
   "template_subject" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "template_content" text COLLATE "pg_catalog"."default" NOT NULL,
   "template_type" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-  "disable_flag" bool NOT NULL,
+  "disable_flag" bool NOT NULL  DEFAULT FALSE,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
@@ -855,7 +854,7 @@ INSERT INTO "public"."t_mail_template" VALUES ('login_verification_code', '登�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_menu";
 CREATE TABLE "public"."t_menu" (
-  "menu_id" int8 NOT NULL,
+  "menu_id" BIGSERIAL,
   "menu_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
   "menu_type" int4 NOT NULL,
   "parent_id" int8 NOT NULL,
@@ -867,12 +866,12 @@ CREATE TABLE "public"."t_menu" (
   "web_perms" text COLLATE "pg_catalog"."default",
   "icon" varchar(100) COLLATE "pg_catalog"."default",
   "context_menu_id" int8,
-  "frame_flag" bool NOT NULL,
+  "frame_flag" bool NOT NULL  DEFAULT FALSE,
   "frame_url" text COLLATE "pg_catalog"."default",
-  "cache_flag" bool NOT NULL,
-  "visible_flag" bool NOT NULL,
-  "disabled_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
+  "cache_flag" bool NOT NULL  DEFAULT FALSE,
+  "visible_flag" bool NOT NULL  DEFAULT FALSE,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "create_user_id" int8 NOT NULL,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "update_user_id" int8,
@@ -1051,14 +1050,14 @@ INSERT INTO "public"."t_menu" VALUES (300, '消息管理', 2, 50, 30, '/message'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_message";
 CREATE TABLE "public"."t_message" (
-  "message_id" int8 NOT NULL,
+  "message_id" BIGSERIAL,
   "message_type" int2 NOT NULL,
   "receiver_user_type" int4 NOT NULL,
   "receiver_user_id" int8 NOT NULL,
   "data_id" varchar(500) COLLATE "pg_catalog"."default",
   "title" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
   "content" text COLLATE "pg_catalog"."default" NOT NULL,
-  "read_flag" bool NOT NULL,
+  "read_flag" bool NOT NULL  DEFAULT FALSE,
   "read_time" timestamp(6),
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -1162,11 +1161,11 @@ INSERT INTO "public"."t_message" VALUES (4, 1, 1, 1, '23', '孙悟空的出差�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_notice";
 CREATE TABLE "public"."t_notice" (
-  "notice_id" int8 NOT NULL,
+  "notice_id" BIGSERIAL,
   "notice_type_id" int8 NOT NULL,
   "title" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
-  "all_visible_flag" bool NOT NULL,
-  "scheduled_publish_flag" bool NOT NULL,
+  "all_visible_flag" bool NOT NULL  DEFAULT FALSE,
+  "scheduled_publish_flag" bool NOT NULL  DEFAULT FALSE,
   "publish_time" timestamp(6) NOT NULL,
   "content_text" text COLLATE "pg_catalog"."default" NOT NULL,
   "content_html" text COLLATE "pg_catalog"."default" NOT NULL,
@@ -1176,7 +1175,7 @@ CREATE TABLE "public"."t_notice" (
   "source" varchar(1000) COLLATE "pg_catalog"."default",
   "author" varchar(1000) COLLATE "pg_catalog"."default",
   "document_number" varchar(1000) COLLATE "pg_catalog"."default",
-  "deleted_flag" bool NOT NULL,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "create_user_id" int8,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -1300,7 +1299,7 @@ INSERT INTO "public"."t_notice" VALUES (60, 2, '1024创新实验室 春节放假
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_notice_type";
 CREATE TABLE "public"."t_notice_type" (
-  "notice_type_id" int8 NOT NULL,
+  "notice_type_id" BIGSERIAL,
   "notice_type_name" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -1371,15 +1370,15 @@ INSERT INTO "public"."t_notice_visible_range" VALUES (63, 1, 63, '2024-08-09 10:
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_oa_bank";
 CREATE TABLE "public"."t_oa_bank" (
-  "bank_id" int8 NOT NULL,
+  "bank_id" BIGSERIAL,
   "bank_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "account_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "account_number" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "remark" varchar(255) COLLATE "pg_catalog"."default",
-  "business_flag" bool NOT NULL,
+  "business_flag" bool NOT NULL  DEFAULT FALSE,
   "enterprise_id" int8 NOT NULL,
-  "disabled_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "create_user_id" int8 NOT NULL,
   "create_user_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1413,7 +1412,7 @@ INSERT INTO "public"."t_oa_bank" VALUES (27, '建设银行', '1024创新实验�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_oa_enterprise";
 CREATE TABLE "public"."t_oa_enterprise" (
-  "enterprise_id" int8 NOT NULL,
+  "enterprise_id" BIGSERIAL,
   "enterprise_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "enterprise_logo" varchar(255) COLLATE "pg_catalog"."default",
   "type" int4 NOT NULL,
@@ -1429,8 +1428,8 @@ CREATE TABLE "public"."t_oa_enterprise" (
   "district_name" varchar(100) COLLATE "pg_catalog"."default",
   "address" varchar(255) COLLATE "pg_catalog"."default",
   "business_license" varchar(255) COLLATE "pg_catalog"."default",
-  "disabled_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "create_user_id" int8 NOT NULL,
   "create_user_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1473,7 +1472,7 @@ INSERT INTO "public"."t_oa_enterprise" VALUES (2, '1024创新实验室', '', 2, 
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_oa_enterprise_employee";
 CREATE TABLE "public"."t_oa_enterprise_employee" (
-  "enterprise_employee_id" int8 NOT NULL,
+  "enterprise_employee_id" BIGSERIAL,
   "enterprise_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "employee_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1498,15 +1497,15 @@ INSERT INTO "public"."t_oa_enterprise_employee" VALUES (155, '2', '44', '2022-10
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_oa_invoice";
 CREATE TABLE "public"."t_oa_invoice" (
-  "invoice_id" int8 NOT NULL,
+  "invoice_id" BIGSERIAL,
   "invoice_heads" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "taxpayer_identification_number" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "account_number" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "bank_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "remark" varchar(255) COLLATE "pg_catalog"."default",
   "enterprise_id" int8 NOT NULL,
-  "disabled_flag" bool NOT NULL,
-  "deleted_flag" bool NOT NULL,
+  "disabled_flag" bool NOT NULL  DEFAULT FALSE,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "create_user_id" int8 NOT NULL,
   "create_user_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1539,7 +1538,7 @@ INSERT INTO "public"."t_oa_invoice" VALUES (15, '1024创新实验室', '1024lab'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_operate_log";
 CREATE TABLE "public"."t_operate_log" (
-  "operate_log_id" int8 NOT NULL,
+  "operate_log_id" BIGSERIAL,
   "operate_user_id" int8 NOT NULL,
   "operate_user_type" int4 NOT NULL,
   "operate_user_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
@@ -1584,7 +1583,7 @@ COMMENT ON TABLE "public"."t_operate_log" IS '操作记录';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_password_log";
 CREATE TABLE "public"."t_password_log" (
-  "id" int8 NOT NULL,
+  "id" BIGSERIAL,
   "user_id" int8 NOT NULL,
   "user_type" int2 NOT NULL,
   "old_password" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
@@ -1611,7 +1610,7 @@ COMMENT ON TABLE "public"."t_password_log" IS '密码修改记录';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_position";
 CREATE TABLE "public"."t_position" (
-  "position_id" int8 NOT NULL,
+  "position_id" BIGSERIAL,
   "position_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
   "level" varchar(200) COLLATE "pg_catalog"."default",
   "sort" int4,
@@ -1684,7 +1683,7 @@ COMMENT ON TABLE "public"."t_reload_result" IS 'reload结果';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_role";
 CREATE TABLE "public"."t_role" (
-  "role_id" int8 NOT NULL,
+  "role_id" BIGSERIAL,
   "role_name" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
   "role_code" varchar(500) COLLATE "pg_catalog"."default",
   "remark" varchar(255) COLLATE "pg_catalog"."default",
@@ -1714,7 +1713,7 @@ INSERT INTO "public"."t_role" VALUES (37, '财务', NULL, '', '2019-08-30 09:31:
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_role_data_scope";
 CREATE TABLE "public"."t_role_data_scope" (
-  "id" int8 NOT NULL,
+  "id" BIGSERIAL,
   "data_scope_type" int4 NOT NULL,
   "view_type" int4 NOT NULL,
   "role_id" int8 NOT NULL,
@@ -1739,7 +1738,7 @@ INSERT INTO "public"."t_role_data_scope" VALUES (67, 1, 2, 1, '2024-03-18 20:41:
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_role_employee";
 CREATE TABLE "public"."t_role_employee" (
-  "id" int8 NOT NULL,
+  "id" BIGSERIAL,
   "role_id" int8 NOT NULL,
   "employee_id" int8 NOT NULL,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1767,7 +1766,7 @@ INSERT INTO "public"."t_role_employee" VALUES (341, 1, 48, '2024-09-02 23:03:28'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_role_menu";
 CREATE TABLE "public"."t_role_menu" (
-  "role_menu_id" int8 NOT NULL,
+  "role_menu_id" BIGSERIAL,
   "role_id" int8 NOT NULL,
   "menu_id" int8 NOT NULL,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1945,18 +1944,18 @@ COMMENT ON TABLE "public"."t_serial_number_record" IS 'serial_number记录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_smart_job";
 CREATE TABLE "public"."t_smart_job" (
-  "job_id" int4 NOT NULL,
+  "job_id" SERIAL,
   "job_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "job_class" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
   "trigger_type" varchar(30) COLLATE "pg_catalog"."default" NOT NULL,
   "trigger_value" varchar(200) COLLATE "pg_catalog"."default" NOT NULL,
-  "enabled_flag" bool NOT NULL,
+  "enabled_flag" bool NOT NULL  DEFAULT FALSE,
   "param" varchar(1000) COLLATE "pg_catalog"."default",
   "last_execute_time" timestamp(6),
   "last_execute_log_id" int4,
   "sort" int4 NOT NULL,
   "remark" varchar(255) COLLATE "pg_catalog"."default",
-  "deleted_flag" bool NOT NULL,
+  "deleted_flag" bool NOT NULL  DEFAULT FALSE,
   "update_name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "create_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "update_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -1988,11 +1987,11 @@ INSERT INTO "public"."t_smart_job" VALUES (2, '示例任务2', 'net.lab1024.sa.b
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_smart_job_log";
 CREATE TABLE "public"."t_smart_job_log" (
-  "log_id" int4 NOT NULL DEFAULT nextval('t_smart_job_log_log_id_seq'::regclass),
+  "log_id" SERIAL,
   "job_id" int4 NOT NULL,
   "job_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "param" varchar(2000) COLLATE "pg_catalog"."default",
-  "success_flag" bool NOT NULL,
+  "success_flag" bool NOT NULL  DEFAULT FALSE,
   "execute_start_time" timestamp(6) NOT NULL,
   "execute_time_millis" int4,
   "execute_end_time" timestamp(6),
@@ -2041,7 +2040,7 @@ INSERT INTO "public"."t_smart_job_log" VALUES (15, 2, '示例任务2', '执行�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."t_table_column";
 CREATE TABLE "public"."t_table_column" (
-  "table_column_id" int8 NOT NULL,
+  "table_column_id" BIGSERIAL,
   "user_id" int8 NOT NULL,
   "user_type" int4 NOT NULL,
   "table_id" int4 NOT NULL,
