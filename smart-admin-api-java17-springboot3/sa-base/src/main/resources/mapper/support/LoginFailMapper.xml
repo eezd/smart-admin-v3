@@ -30,7 +30,16 @@
 
     <select id="selectByUserIdAndUserType"
             resultType="net.lab1024.sa.base.module.support.securityprotect.domain.LoginFailEntity">
-        select *
+        select
+        login_fail_id,
+        user_id,
+        user_type,
+        login_name,
+        lock_flag,
+        login_fail_count,
+        login_lock_begin_time,
+        update_time,
+        create_time
         from t_login_fail
         where user_id = #{userId}
           and user_type = #{userType}
