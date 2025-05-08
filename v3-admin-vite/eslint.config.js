@@ -25,6 +25,7 @@ export default antfu(
       "vue/attributes-order": "off",
       // ts
       "ts/no-use-before-define": "off",
+      "unused-imports/no-unused-vars": "warn",
       // node
       "node/prefer-global/process": "off",
       // style

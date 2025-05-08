@@ -2,7 +2,8 @@ import type { AxiosInstance, AxiosRequestConfig } from "axios"
 import { useUserStore } from "@/pinia/stores/user"
 import { getToken } from "@@/utils/cache/cookies"
 import axios from "axios"
-import { get, merge } from "lodash-es"
+import message from "element-plus/es/components/message/index.mjs"
+import { get, isUndefined, merge } from "lodash-es"
 
 /** 退出登录并强制刷新页面（会重定向到登录页） */
 function logout() {
@@ -129,3 +130,48 @@ const instance = createInstance()
 
 /** 用于请求的方法 */
 export const request = createRequest(instance)
+
+export function handleDownloadError(error: any) {
+  if (error instanceof Blob) {
+    const fileReader = new FileReader()
+    fileReader.readAsText(error)
+    fileReader.onload = () => {
+      const msg = fileReader.result
+      const jsonMsg = JSON.parse(msg as string) // 显式类型断言
+      message.error(jsonMsg.msg)
+    }
+  } else {
+    message.error("网络发生错误", error)
+  }
+}
+
+export function handleDownloadData(response: any) {
+  if (!response) {
+    return
+  }
+
+  // 获取返回类型
+  const contentType = isUndefined(response.headers["content-type"]) ? response.headers["Content-Type"] : response.headers["content-type"]
+
+  // 构建下载数据
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }))
+  const link = document.createElement("a")
+  link.style.display = "none"
+  link.href = url
+
+  // 从消息头获取文件名
+  const str = isUndefined(response.headers["content-disposition"])
+    ? response.headers["Content-Disposition"].split(";")[1]
+    : response.headers["content-disposition"].split(";")[1]
+
+  const filename = isUndefined(str.split("fileName=")[1]) ? str.split("filename=")[1] : str.split("fileName=")[1]
+  link.setAttribute("download", decodeURIComponent(filename))
+
+  // 触发点击下载
+  document.body.appendChild(link)
+  link.click()
+
+  // 下载完释放
+  document.body.removeChild(link) // 下载完成移除元素
+  window.URL.revokeObjectURL(url) // 释放掉blob对象
+}
