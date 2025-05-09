@@ -14,7 +14,7 @@ export const loginApi = {
   },
   logout: () => {
     return request<ApiResponseData<any>>({
-      url: "login",
+      url: "login/logout",
       method: "GET"
     })
   },

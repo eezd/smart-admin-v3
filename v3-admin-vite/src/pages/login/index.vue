@@ -1,62 +1,78 @@
 <script lang="ts" setup>
-import type { FormInstance, FormRules } from "element-plus"
-import type { LoginRequestData } from "./apis/type"
+import type { FormRules } from "element-plus"
+import { LOGIN_DEVICE_ENUM } from "@/common/constants/system/login-device-const"
+import { getToken } from "@/common/utils/cache/cookies"
+import { encryptData } from "@/common/utils/encrypt"
+import { useDictStore } from "@/pinia/stores/dict"
 import { useSettingsStore } from "@/pinia/stores/settings"
 import { useUserStore } from "@/pinia/stores/user"
+import { buildRoutes } from "@/router"
+import { dictApi } from "@@/apis/support/dict-api"
+import { loginApi } from "@@/apis/system/login-api"
 import ThemeSwitch from "@@/components/ThemeSwitch/index.vue"
 import { Key, Loading, Lock, Picture, User } from "@element-plus/icons-vue"
-import { getCaptchaApi, loginApi } from "./apis"
+import { ElMessage } from "element-plus"
+import { useRouter } from "vue-router"
 import Owl from "./components/Owl.vue"
 import { useFocus } from "./composables/useFocus"
 
 const router = useRouter()
 
 const userStore = useUserStore()
-
+const dictStore = useDictStore()
 const settingsStore = useSettingsStore()
-
 const { isFocus, handleBlur, handleFocus } = useFocus()
 
-/** 登录表单元素的引用 */
-const loginFormRef = ref<FormInstance | null>(null)
-
-/** 登录按钮 Loading */
 const loading = ref(false)
 
-/** 验证码图片 URL */
+// #region 登录
+const loginFormRef = ref<any>(null)
 const codeUrl = ref("")
-
-/** 登录表单数据 */
-const loginFormData: LoginRequestData = reactive({
-  username: "admin",
-  password: "12345678",
-  code: ""
+const loginFormData: any = reactive({
+  loginName: "admin",
+  password: "",
+  captchaCode: "",
+  captchaUuid: "",
+  loginDevice: LOGIN_DEVICE_ENUM.PC.value
 })
 
-/** 登录表单校验规则 */
 const loginFormRules: FormRules = {
-  username: [
+  loginName: [
     { required: true, message: "请输入用户名", trigger: "blur" }
   ],
   password: [
     { required: true, message: "请输入密码", trigger: "blur" },
-    { min: 8, max: 16, message: "长度在 8 到 16 个字符", trigger: "blur" }
+    { min: 2, max: 16, message: "长度在 2 到 16 个字符", trigger: "blur" }
   ],
-  code: [
+  captchaCode: [
     { required: true, message: "请输入验证码", trigger: "blur" }
   ]
 }
 
-/** 登录 */
 function handleLogin() {
-  loginFormRef.value?.validate((valid) => {
+  loginFormRef.value?.validate((valid: any) => {
     if (!valid) {
       ElMessage.error("表单校验不通过")
       return
     }
     loading.value = true
-    loginApi(loginFormData).then(({ data }) => {
-      userStore.setToken(data.token)
+    // 密码加密
+    const encryptPasswordForm = Object.assign({}, loginFormData, {
+      password: encryptData(loginFormData.password)
+    })
+    loginApi.login(encryptPasswordForm).then(({ data }) => {
+      userStore.setToken(data.token!)
+
+      // 更新用户信息到pinia
+      useUserStore().setUserLoginInfo(data)
+
+      // 初始化数据字典
+      dictApi.getAllData().then((dictRes) => {
+        dictStore.initData(dictRes.data)
+      })
+
+      // 构建路由
+      buildRoutes()
       router.push("/")
     }).catch(() => {
       createCode()
@@ -66,21 +82,22 @@ function handleLogin() {
     })
   })
 }
+// #endregion
 
-/** 创建验证码 */
+// #region 验证码
 function createCode() {
   // 清空已输入的验证码
-  loginFormData.code = ""
+  loginFormData.captchaCode = ""
   // 清空验证图片
   codeUrl.value = ""
   // 获取验证码图片
-  getCaptchaApi().then((res) => {
-    codeUrl.value = res.data
+  loginApi.getCaptcha().then(({ data }) => {
+    codeUrl.value = data.captchaBase64Image ?? ""
+    loginFormData.captchaUuid = data.captchaUuid ?? ""
   })
 }
-
-// 初始化验证码
 createCode()
+// #endregion
 </script>
 
 <template>
@@ -93,9 +110,9 @@ createCode()
       </div>
       <div class="content">
         <el-form ref="loginFormRef" :model="loginFormData" :rules="loginFormRules" @keyup.enter="handleLogin">
-          <el-form-item prop="username">
+          <el-form-item prop="loginName">
             <el-input
-              v-model.trim="loginFormData.username"
+              v-model.trim="loginFormData.loginName"
               placeholder="用户名"
               type="text"
               tabindex="1"
@@ -116,9 +133,9 @@ createCode()
               @focus="handleFocus"
             />
           </el-form-item>
-          <el-form-item prop="code">
+          <el-form-item prop="captchaCode">
             <el-input
-              v-model.trim="loginFormData.code"
+              v-model.trim="loginFormData.captchaCode"
               placeholder="验证码"
               type="text"
               tabindex="3"

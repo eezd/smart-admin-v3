@@ -13,12 +13,13 @@ function filterDynamicRoutes(routes: RouteRecordRaw[], roles: string[]) {
   const res: RouteRecordRaw[] = []
   routes.forEach((route) => {
     const tempRoute = { ...route }
-    if (hasPermission(roles, tempRoute)) {
-      if (tempRoute.children) {
-        tempRoute.children = filterDynamicRoutes(tempRoute.children, roles)
-      }
-      res.push(tempRoute)
-    }
+    // if (hasPermission(roles, tempRoute)) {
+    //   if (tempRoute.children) {
+    //     tempRoute.children = filterDynamicRoutes(tempRoute.children, roles)
+    //   }
+    //   res.push(tempRoute)
+    // }
+    res.push(tempRoute)
   })
   return res
 }

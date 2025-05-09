@@ -1,8 +1,18 @@
 import type { RouteRecordRaw } from "vue-router"
+import { setRouteChange } from "@/common/composables/useRouteListener"
+import { useTitle } from "@/common/composables/useTitle"
+import { HOME_PAGE_PATH, PAGE_PATH_404, PAGE_PATH_LOGIN } from "@/common/constants/common-const"
+import { HOME_PAGE_NAME } from "@/common/constants/system/home-const"
+import { getToken } from "@/common/utils/cache/cookies"
+import { useTagsViewStore } from "@/pinia/stores/tags-view"
+import { useUserStore } from "@/pinia/stores/user"
 import { routerConfig } from "@/router/config"
-import { registerNavigationGuard } from "@/router/guard"
+// import { registerNavigationGuard } from "@/router/guard"
+import { isFunction } from "lodash-es"
+import nProgress from "nprogress"
 import { createRouter } from "vue-router"
 import { flatMultiLevelRoutes } from "./helper"
+import { isWhiteList } from "./whitelist"
 
 const Layouts = () => import("@/layouts/index.vue")
 
@@ -58,125 +68,8 @@ export const constantRoutes: RouteRecordRaw[] = [
         meta: {
           title: "首页",
           svgIcon: "dashboard",
+          keepAlive: true,
           affix: true
-        }
-      }
-    ]
-  },
-  {
-    path: "/demo",
-    component: Layouts,
-    redirect: "/demo/unocss",
-    name: "Demo",
-    meta: {
-      title: "示例集合",
-      elIcon: "DataBoard"
-    },
-    children: [
-      {
-        path: "unocss",
-        component: () => import("@/pages/demo/unocss/index.vue"),
-        name: "UnoCSS",
-        meta: {
-          title: "UnoCSS"
-        }
-      },
-      {
-        path: "element-plus",
-        component: () => import("@/pages/demo/element-plus/index.vue"),
-        name: "ElementPlus",
-        meta: {
-          title: "Element Plus",
-          keepAlive: true
-        }
-      },
-      {
-        path: "vxe-table",
-        component: () => import("@/pages/demo/vxe-table/index.vue"),
-        name: "VxeTable",
-        meta: {
-          title: "Vxe Table",
-          keepAlive: true
-        }
-      },
-      {
-        path: "level2",
-        component: () => import("@/pages/demo/level2/index.vue"),
-        redirect: "/demo/level2/level3",
-        name: "Level2",
-        meta: {
-          title: "二级路由",
-          alwaysShow: true
-        },
-        children: [
-          {
-            path: "level3",
-            component: () => import("@/pages/demo/level2/level3/index.vue"),
-            name: "Level3",
-            meta: {
-              title: "三级路由",
-              keepAlive: true
-            }
-          }
-        ]
-      },
-      {
-        path: "composable-demo",
-        redirect: "/demo/composable-demo/use-fetch-select",
-        name: "ComposableDemo",
-        meta: {
-          title: "组合式函数"
-        },
-        children: [
-          {
-            path: "use-fetch-select",
-            component: () => import("@/pages/demo/composable-demo/use-fetch-select.vue"),
-            name: "UseFetchSelect",
-            meta: {
-              title: "useFetchSelect"
-            }
-          },
-          {
-            path: "use-fullscreen-loading",
-            component: () => import("@/pages/demo/composable-demo/use-fullscreen-loading.vue"),
-            name: "UseFullscreenLoading",
-            meta: {
-              title: "useFullscreenLoading"
-            }
-          },
-          {
-            path: "use-watermark",
-            component: () => import("@/pages/demo/composable-demo/use-watermark.vue"),
-            name: "UseWatermark",
-            meta: {
-              title: "useWatermark"
-            }
-          }
-        ]
-      }
-    ]
-  },
-  {
-    path: "/link",
-    meta: {
-      title: "文档链接",
-      elIcon: "Link"
-    },
-    children: [
-      {
-        path: "https://juejin.cn/post/7445151895121543209",
-        component: () => {},
-        name: "Link1",
-        meta: {
-          title: "中文文档"
-        }
-      },
-      {
-        path: "https://juejin.cn/column/7207659644487139387",
-        component: () => {},
-        name: "Link2",
-        meta: {
-          title: "新手教程"
         }
       }
     ]
@@ -189,41 +82,7 @@ export const constantRoutes: RouteRecordRaw[] = [
  * @description 必须带有唯一的 Name 属性
  */
 export const dynamicRoutes: RouteRecordRaw[] = [
-  {
-    path: "/permission",
-    component: Layouts,
-    redirect: "/permission/page-level",
-    name: "Permission",
-    meta: {
-      title: "权限演示",
-      elIcon: "Lock",
-      // 可以在根路由中设置角色
-      roles: ["admin", "editor"],
-      alwaysShow: true
-    },
-    children: [
-      {
-        path: "page-level",
-        component: () => import("@/pages/demo/permission/page-level.vue"),
-        name: "PermissionPageLevel",
-        meta: {
-          title: "页面级",
-          // 或者在子路由中设置角色
-          roles: ["admin"]
-        }
-      },
-      {
-        path: "button-level",
-        component: () => import("@/pages/demo/permission/button-level.vue"),
-        name: "PermissionButtonLevel",
-        meta: {
-          title: "按钮级",
-          // 如果未设置角色，则表示：该页面不需要权限，但会继承根路由的角色
-          roles: undefined
-        }
-      }
-    ]
-  }
+
 ]
 
 /** 路由实例 */
@@ -249,4 +108,152 @@ export function resetRouter() {
 }
 
 // 注册路由导航守卫
-registerNavigationGuard(router)
+// registerNavigationGuard(router)
+
+const routerMap = new Map()
+
+router.beforeEach(async (to, from, next) => {
+  // 进度条开启
+  nProgress.start()
+
+  // 公共页面，任何时候都可以跳转
+  if (to.path === PAGE_PATH_404) {
+    next()
+    return true
+  }
+
+  // 验证登录
+  if (!getToken()) {
+    useUserStore().logout()
+    if (to.path === PAGE_PATH_LOGIN) {
+      next()
+    } else {
+      next({ path: PAGE_PATH_LOGIN })
+    }
+    return true
+  }
+
+  // 登录页，则跳转到首页
+  if (to.path === PAGE_PATH_LOGIN) {
+    next({ path: HOME_PAGE_PATH })
+    return true
+  }
+
+  // 首页（ 需要登录 ，但不需要验证权限）
+  if (to.path === HOME_PAGE_NAME) {
+    next()
+    return true
+  }
+
+  // 下载路由对应的 页面组件，并修改组件的Name，如果修改过，则不需要修改
+  const toRouterInfo = routerMap.get(to.name)
+  if (toRouterInfo && isFunction(toRouterInfo.component) && toRouterInfo.meta.renameComponentFlag === false) {
+    // 因为组件component 为 lazy load是个方法，所以可以直接执行 component()方法
+    toRouterInfo.component().then((val: any) => {
+      // 修改组件的name
+      val.default.name = to.meta.componentName
+      // 记录已经修改过 组件的name
+      toRouterInfo.meta.renameComponentFlag = true
+      console.log(to.meta.componentName)
+    })
+  }
+
+  // useUserStore().setTagNav(to, from)
+
+  // 设置keepAlive
+  // if (to.meta.keepAlive) {
+  //   nextTick(() => {
+  //     useUserStore().pushKeepAliveIncludes(to.meta.componentName)
+  //   })
+  // }
+
+  console.log(to.meta)
+
+  next()
+})
+
+// router.afterEach(() => {
+//   nProgress.done()
+// })
+
+const { setTitle } = useTitle()
+// 全局后置钩子
+router.afterEach((to) => {
+  setRouteChange(to)
+  setTitle(to.meta.title)
+  nProgress.done()
+})
+
+export function buildRoutes(menuRouterList?: any) {
+  const menuList = menuRouterList || useUserStore().menuRouterList || []
+  /**
+   * 1、构建整个路由信息
+   * 2、添加到路由里
+   */
+  const routerList = []
+  // 获取所有vue组件引用地址 用于构建路由
+  const modules = import.meta.glob("../pages/**/**.vue")
+  // 获取所有vue组件 用于注入name属性 name属性用于keep-alive
+  console.log(modules)
+
+  console.log("路由构建开始")
+
+  // 1、构建整个路由信息
+  for (const e of menuList) {
+    if (!e.menuId) {
+      continue
+    }
+    if (!e.path) {
+      continue
+    }
+    if (e.deletedFlag && e.deletedFlag === true) {
+      continue
+    }
+    const route = {
+      path: e.path.startsWith("/") ? e.path : `/${e.path}`,
+      // 使用【menuId】作为name唯一标识
+      name: e.menuId.toString(),
+      meta: {
+        // 数据库菜单(页面)id
+        id: e.menuId.toString(),
+        // 组件名称
+        componentName: e.menuId.toString(),
+        // 菜单展示
+        title: e.menuName,
+        // 菜单图标展示
+        icon: e.icon,
+        // 是否在菜单隐藏
+        hideInMenu: !e.visibleFlag,
+        // 页面是否keep-alive缓存
+        keepAlive: e.cacheFlag,
+        // 是否为外链
+        frameFlag: e.frameFlag,
+        // 外链地址
+        frameUrl: e.frameUrl,
+        // 是否 rename了组件的名字
+        renameComponentFlag: false
+      }
+    } as any
+
+    if (e.frameFlag) {
+      route.component = () => import("@@/components/Framework/Iframe/iframe-index.vue")
+    } else {
+      const componentPath = e.component && e.component.startsWith("/") ? e.component : `/${e.component}`
+      const relativePath = `../pages${componentPath}`
+      // // eslint-disable-next-line no-prototype-builtins
+      route.component = modules[relativePath]
+    }
+    routerList.push(route)
+    routerMap.set(e.menuId.toString(), route)
+  }
+
+  // 2、添加到路由里
+  router.addRoute({
+    path: "/",
+    meta: {},
+    component: Layouts,
+    children: routerList
+  })
+  console.log("路由构建完成")
+  console.log(router)
+}

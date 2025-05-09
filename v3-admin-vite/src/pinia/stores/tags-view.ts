@@ -33,6 +33,7 @@ export const useTagsViewStore = defineStore("tags-view", () => {
     if (typeof view.name !== "string") return
     if (cachedViews.value.includes(view.name)) return
     if (view.meta?.keepAlive) {
+      console.log("缓存")
       cachedViews.value.push(view.name)
     }
   }

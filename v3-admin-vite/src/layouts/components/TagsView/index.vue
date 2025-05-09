@@ -162,6 +162,7 @@ initTags()
 
 // 监听路由变化
 listenerRouteChange((route) => {
+  console.log("路由变化", route)
   addTags(route)
 }, true)
 </script>

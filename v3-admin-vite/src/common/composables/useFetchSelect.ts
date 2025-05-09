@@ -1,3 +1,5 @@
+import type { ApiResponseData } from "types/api"
+
 type OptionValue = string | number
 
 /** Select 需要的数据格式 */

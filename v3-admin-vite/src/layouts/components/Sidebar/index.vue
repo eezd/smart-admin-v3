@@ -2,6 +2,7 @@
 import { useAppStore } from "@/pinia/stores/app"
 import { usePermissionStore } from "@/pinia/stores/permission"
 import { useSettingsStore } from "@/pinia/stores/settings"
+import { useUserStore } from "@/pinia/stores/user"
 import { useDevice } from "@@/composables/useDevice"
 import { useLayoutMode } from "@@/composables/useLayoutMode"
 import { getCssVar } from "@@/utils/css"
@@ -18,9 +19,11 @@ const route = useRoute()
 const appStore = useAppStore()
 const permissionStore = usePermissionStore()
 const settingsStore = useSettingsStore()
+const router = useRouter()
 
 const activeMenu = computed(() => route.meta.activeMenu || route.path)
 const noHiddenRoutes = computed(() => permissionStore.routes.filter(item => !item.meta?.hidden))
+// const noHiddenRoutes = computed(() => useUserStore().menuTree)
 const isCollapse = computed(() => !appStore.sidebar.opened)
 const isLogo = computed(() => isLeft.value && settingsStore.showLogo)
 const backgroundColor = computed(() => (isLeft.value ? v3SidebarMenuBgColor : undefined))
@@ -44,11 +47,16 @@ const tipLineWidth = computed(() => !isTop.value ? "2px" : "0px")
         :collapse-transition="false"
         :mode="isTop && !isMobile ? 'horizontal' : 'vertical'"
       >
-        <Item
-          v-for="noHiddenRoute in noHiddenRoutes"
+        <!-- <Item
+          v-for="noHiddenRoute in useUserStore().menuTree"
           :key="noHiddenRoute.path"
           :item="noHiddenRoute"
           :base-path="noHiddenRoute.path"
+        /> -->
+        <Item
+          v-for="noHiddenRoute in useUserStore().menuTree"
+          :key="noHiddenRoute.menuId"
+          :item="noHiddenRoute"
         />
       </el-menu>
     </el-scrollbar>

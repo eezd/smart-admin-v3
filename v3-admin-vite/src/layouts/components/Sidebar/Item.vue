@@ -1,23 +1,22 @@
 <script lang="ts" setup>
 import type { RouteRecordRaw } from "vue-router"
+import { MENU_TYPE_ENUM } from "@/common/constants/system/menu-const"
+import { useUserStore } from "@/pinia/stores/user"
+import { router } from "@/router"
 import { isExternal } from "@@/utils/validate"
 import path from "path-browserify"
 import Link from "./Link.vue"
 
 interface Props {
-  item: RouteRecordRaw
-  basePath?: string
+  item: any
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  basePath: ""
-})
+const props = defineProps<Props>()
 
 /** 是否始终显示根菜单 */
 const alwaysShowRootMenu = computed(() => props.item.meta?.alwaysShow)
 
 /** 显示的子菜单 */
-const showingChildren = computed(() => props.item.children?.filter(child => !child.meta?.hidden) ?? [])
+const showingChildren = computed(() => props.item.children?.filter((child: any) => !child.disabledFlag) ?? [])
 
 /** 显示的子菜单数量 */
 const showingChildNumber = computed(() => showingChildren.value.length)
@@ -35,21 +34,19 @@ const theOnlyOneChild = computed(() => {
   }
 })
 
-/** 解析路径 */
-function resolvePath(routePath: string) {
-  switch (true) {
-    case isExternal(routePath):
-      return routePath
-    case isExternal(props.basePath):
-      return props.basePath
-    default:
-      return path.resolve(props.basePath, routePath)
-  }
-}
+// 选中菜单，页面跳转
+// function onSelectMenu(menuItem:any) {
+//   selectedKeys.value = [menuItem.menuId.toString()]
+//   if (menuItem.menuType === MENU_TYPE_ENUM.MENU.value && (_.isEmpty(menuItem.children) || menuItem.children.every(e => !e.visibleFlag))) {
+//     useUserStore().deleteKeepAliveIncludes(menuItem.menuId.toString())
+//     router.push({ name: menuItem.menuId.toString() })
+//   }
+//   menuEmitter.emit("selectTopMenu", menuItem)
+// }
 </script>
 
 <template>
-  <template v-if="!alwaysShowRootMenu && theOnlyOneChild && !theOnlyOneChild.children">
+  <!-- <template v-if="!alwaysShowRootMenu && theOnlyOneChild && !theOnlyOneChild.children">
     <Link v-if="theOnlyOneChild.meta" :to="resolvePath(theOnlyOneChild.path)">
       <el-menu-item :index="resolvePath(theOnlyOneChild.path)">
         <SvgIcon v-if="theOnlyOneChild.meta.svgIcon" :name="theOnlyOneChild.meta.svgIcon" class="svg-icon" />
@@ -72,6 +69,31 @@ function resolvePath(routePath: string) {
         :key="child.path"
         :item="child"
         :base-path="resolvePath(child.path)"
+      />
+    </template>
+  </el-sub-menu> -->
+  <template v-if="props.item.menuType === 2">
+    <Link :to="props.item.path">
+      <el-menu-item :index="String(props.item.menuId)">
+        <!-- <SvgIcon v-if="theOnlyOneChild.meta.svgIcon" :name="theOnlyOneChild.meta.svgIcon" class="svg-icon" />
+        <component v-else-if="theOnlyOneChild.meta.elIcon" :is="theOnlyOneChild.meta.elIcon" class="el-icon" /> -->
+        <template v-if="props.item.menuName" #title>
+          <span class="title">{{ props.item.menuName }}</span>
+        </template>
+      </el-menu-item>
+    </Link>
+  </template>
+  <el-sub-menu v-else :index="String(props.item.menuId)" teleported>
+    <template #title>
+      <SvgIcon v-if="props.item.meta?.svgIcon" :name="props.item.meta.svgIcon" class="svg-icon" />
+      <component v-else-if="props.item.meta?.elIcon" :is="props.item.meta.elIcon" class="el-icon" />
+      <span v-if="props.item.menuName" class="title">{{ props.item.menuName }}</span>
+    </template>
+    <template v-if="props.item.children">
+      <Item
+        v-for="child in showingChildren"
+        :key="child.path"
+        :item="child"
       />
     </template>
   </el-sub-menu>
