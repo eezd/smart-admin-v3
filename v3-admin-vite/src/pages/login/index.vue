@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import type { FormRules } from "element-plus"
 import { LOGIN_DEVICE_ENUM } from "@/common/constants/system/login-device-const"
-import { getToken } from "@/common/utils/cache/cookies"
 import { encryptData } from "@/common/utils/encrypt"
 import { useDictStore } from "@/pinia/stores/dict"
 import { useSettingsStore } from "@/pinia/stores/settings"

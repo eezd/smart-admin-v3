@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { TagView } from "@/pinia/stores/tags-view"
 import type { RouteLocationNormalizedGeneric, RouteRecordRaw, RouterLink } from "vue-router"
-import { usePermissionStore } from "@/pinia/stores/permission"
+// import { usePermissionStore } from "@/pinia/stores/permission"
 import { useTagsViewStore } from "@/pinia/stores/tags-view"
 import { useRouteListener } from "@@/composables/useRouteListener"
 import { Close } from "@element-plus/icons-vue"
@@ -14,7 +14,7 @@ const route = useRoute()
 
 const tagsViewStore = useTagsViewStore()
 
-const permissionStore = usePermissionStore()
+// const permissionStore = usePermissionStore()
 
 const { listenerRouteChange } = useRouteListener()
 
@@ -34,6 +34,7 @@ const left = ref(0)
 const selectedTag = ref<TagView>({})
 
 /** 固定的标签页 */
+// eslint-disable-next-line prefer-const
 let affixTags: TagView[] = []
 
 /** 判断标签页是否激活 */
@@ -69,11 +70,11 @@ function filterAffixTags(routes: RouteRecordRaw[], basePath = "/") {
 
 /** 初始化标签页 */
 function initTags() {
-  affixTags = filterAffixTags(permissionStore.routes)
-  for (const tag of affixTags) {
-    // 必须含有 name 属性
-    tag.name && tagsViewStore.addVisitedView(tag)
-  }
+  // affixTags = filterAffixTags(permissionStore.routes)
+  // for (const tag of affixTags) {
+  //   // 必须含有 name 属性
+  //   tag.name && tagsViewStore.addVisitedView(tag)
+  // }
 }
 
 /** 添加标签页 */

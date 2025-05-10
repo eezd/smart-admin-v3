@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { ElScrollbar } from "element-plus"
 import type { RouteRecordNameGeneric, RouteRecordRaw } from "vue-router"
-import { usePermissionStore } from "@/pinia/stores/permission"
+// import { usePermissionStore } from "@/pinia/stores/permission"
 import { useDevice } from "@@/composables/useDevice"
 import { isExternal } from "@@/utils/validate"
-import { cloneDeep, debounce } from "lodash-es"
+import { debounce } from "lodash-es"
 import Footer from "./Footer.vue"
 import Result from "./Result.vue"
 
@@ -27,13 +27,13 @@ const isPressUpOrDown = ref<boolean>(false)
 /** 控制搜索对话框宽度 */
 const modalWidth = computed(() => (isMobile.value ? "80vw" : "40vw"))
 /** 树形菜单 */
-const menus = computed(() => cloneDeep(usePermissionStore().routes))
+// const menus = computed(() => cloneDeep(usePermissionStore().routes))
 
 /** 搜索（防抖） */
 const handleSearch = debounce(() => {
-  const flatMenus = flatTree(menus.value)
+  // const flatMenus = flatTree(menus.value)
   const _keywords = keyword.value.toLocaleLowerCase().trim()
-  result.value = flatMenus.filter(menu => keyword.value ? menu.meta?.title?.toLocaleLowerCase().includes(_keywords) : false)
+  // result.value = flatMenus.filter(menu => keyword.value ? menu.meta?.title?.toLocaleLowerCase().includes(_keywords) : false)
   // 默认选中搜索结果的第一项
   const length = result.value?.length
   activeRouteName.value = length > 0 ? result.value[0].name : undefined

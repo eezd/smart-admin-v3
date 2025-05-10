@@ -7,7 +7,7 @@
  * @FilePath: /smart-admin/@/types/base.d.ts
  */
 export interface SmartEnumWrapper<T> {
-  [key: string]: SmartEnum<T>
+  [key: string]: SmartEnum<string> | SmartEnum<number>
 }
 
 export interface SmartEnum<T> {

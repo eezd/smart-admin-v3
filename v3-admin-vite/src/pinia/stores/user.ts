@@ -1,10 +1,9 @@
-import { loginApi } from "@/common/apis/system/login-api"
+import { messageApi } from "@/common/apis/support/message-api"
 import { CacheKey } from "@/common/constants/cache-key"
 import { MENU_TYPE_ENUM } from "@/common/constants/system/menu-const"
 import { smartSentry } from "@/lib/smart-sentry"
 import { pinia } from "@/pinia"
 import { resetRouter } from "@/router"
-import { routerConfig } from "@/router/config"
 import { getCurrentUserApi } from "@@/apis/users"
 import { setToken as _setToken, getToken, removeToken } from "@@/utils/cache/cookies"
 import { cloneDeep, isEmpty } from "lodash-es"
@@ -41,6 +40,35 @@ export const useUserStore = defineStore("user", () => {
 
   const tagsViewStore = useTagsViewStore()
   const settingsStore = useSettingsStore()
+
+  // 功能点
+  const getPointList = () => {
+    if (isEmpty(pointsList.value)) {
+      const localUserPoints = localStorage.getItem(CacheKey.USER_POINTS) || ""
+      pointsList.value = localUserPoints ? JSON.parse(localUserPoints) : []
+    }
+    return pointsList.value
+  }
+
+  // 登出
+  const logout = () => {
+    // loginApi.logout()
+    removeToken()
+    token.value = ""
+    roles.value = []
+    resetRouter()
+    resetTagsView()
+
+    menuTree.value = []
+    tagNav.value = []
+    unreadMessageCount.value = 0
+    localStorage.removeItem(CacheKey.USER_POINTS)
+    localStorage.removeItem(CacheKey.USER_TAG_NAV)
+    localStorage.removeItem(CacheKey.APP_CONFIG)
+    localStorage.removeItem(CacheKey.HOME_QUICK_ENTRY)
+    localStorage.removeItem(CacheKey.NOTICE_READ)
+    localStorage.removeItem(CacheKey.TO_BE_DONE)
+  }
 
   // 设置 Token
   const setToken = (value: string) => {
@@ -88,45 +116,9 @@ export const useUserStore = defineStore("user", () => {
     )
 
     // 查询未读消息数量
-    // queryUnreadMessageCount()
+    queryUnreadMessageCount()
     // 获取待办工作数
     queryToBeDoneList()
-  }
-
-  // 模拟角色变化
-  const changeRoles = (role: string) => {
-    const newToken = `token-${role}`
-    token.value = newToken
-    _setToken(newToken)
-    // 用刷新页面代替重新登录
-    location.reload()
-  }
-
-  // 登出
-  const logout = () => {
-    loginApi.logout()
-    removeToken()
-    token.value = ""
-    roles.value = []
-    resetRouter()
-    resetTagsView()
-
-    menuTree.value = []
-    tagNav.value = []
-    unreadMessageCount.value = 0
-    localStorage.removeItem(CacheKey.USER_POINTS)
-    localStorage.removeItem(CacheKey.USER_TAG_NAV)
-    localStorage.removeItem(CacheKey.APP_CONFIG)
-    localStorage.removeItem(CacheKey.HOME_QUICK_ENTRY)
-    localStorage.removeItem(CacheKey.NOTICE_READ)
-    localStorage.removeItem(CacheKey.TO_BE_DONE)
-  }
-
-  // 重置 Token
-  const resetToken = () => {
-    removeToken()
-    token.value = ""
-    roles.value = []
   }
 
   // 重置 Visited Views 和 Cached Views
@@ -138,14 +130,14 @@ export const useUserStore = defineStore("user", () => {
   }
 
   // 查询未读消息数量
-  // async function queryUnreadMessageCount() {
-  //   try {
-  //     const result = await messageApi.queryUnreadCount()
-  //     unreadMessageCount.value = result.data
-  //   } catch (e) {
-  //     smartSentry.captureError(e)
-  //   }
-  // }
+  async function queryUnreadMessageCount() {
+    try {
+      const result = await messageApi.queryUnreadCount()
+      unreadMessageCount.value = result.data
+    } catch (e) {
+      smartSentry.captureError(e)
+    }
+  }
 
   // 获取待办工作数
   async function queryToBeDoneList() {
@@ -187,13 +179,16 @@ export const useUserStore = defineStore("user", () => {
     token,
     roles,
     username,
+
+    getPointList,
+    logout,
     setToken,
     getInfo,
-    changeRoles,
-    logout,
-    resetToken,
 
-    setUserLoginInfo
+    setUserLoginInfo,
+    resetTagsView,
+    queryUnreadMessageCount,
+    queryToBeDoneList
   }
 })
 

@@ -4,7 +4,6 @@ import { useTitle } from "@/common/composables/useTitle"
 import { HOME_PAGE_PATH, PAGE_PATH_404, PAGE_PATH_LOGIN } from "@/common/constants/common-const"
 import { HOME_PAGE_NAME } from "@/common/constants/system/home-const"
 import { getToken } from "@/common/utils/cache/cookies"
-import { useTagsViewStore } from "@/pinia/stores/tags-view"
 import { useUserStore } from "@/pinia/stores/user"
 import { routerConfig } from "@/router/config"
 // import { registerNavigationGuard } from "@/router/guard"
@@ -12,7 +11,6 @@ import { isFunction } from "lodash-es"
 import nProgress from "nprogress"
 import { createRouter } from "vue-router"
 import { flatMultiLevelRoutes } from "./helper"
-import { isWhiteList } from "./whitelist"
 
 const Layouts = () => import("@/layouts/index.vue")
 
@@ -106,9 +104,6 @@ export function resetRouter() {
     location.reload()
   }
 }
-
-// 注册路由导航守卫
-// registerNavigationGuard(router)
 
 const routerMap = new Map()
 

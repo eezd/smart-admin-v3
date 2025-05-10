@@ -1,10 +1,4 @@
 <script lang="ts" setup>
-import type { RouteRecordRaw } from "vue-router"
-import { MENU_TYPE_ENUM } from "@/common/constants/system/menu-const"
-import { useUserStore } from "@/pinia/stores/user"
-import { router } from "@/router"
-import { isExternal } from "@@/utils/validate"
-import path from "path-browserify"
 import Link from "./Link.vue"
 
 interface Props {

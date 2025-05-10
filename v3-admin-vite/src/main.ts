@@ -84,23 +84,12 @@ async function initVue() {
   // 全局
   // app.config.globalProperties.$antIcons = antIcons;
   // app.config.globalProperties.$lodash = lodash;
-  // 挂载
-  app.mount("#app")
+
+  // router 准备就绪后挂载应用
+  router.isReady().then(() => {
+    app.mount("#app")
+  })
 }
-
-// // 创建应用实例
-// const app = createApp(App)
-
-// // 安装插件（全局组件、自定义指令等）
-// installPlugins(app)
-
-// // 安装 pinia 和 router
-// app.use(pinia).use(router)
-
-// // router 准备就绪后挂载应用
-// router.isReady().then(() => {
-//   app.mount("#app")
-// })
 
 if (!getToken()) {
   initVue()

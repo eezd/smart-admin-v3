@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { loginApi } from "@/common/apis/system/login-api"
 import { useAppStore } from "@/pinia/stores/app"
 import { useSettingsStore } from "@/pinia/stores/settings"
 import { useUserStore } from "@/pinia/stores/user"
@@ -26,6 +27,7 @@ function toggleSidebar() {
 
 /** 登出 */
 function logout() {
+  loginApi.logout()
   userStore.logout()
   router.push("/login")
 }
