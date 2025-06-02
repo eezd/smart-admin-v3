@@ -35,64 +35,71 @@ import { getToken } from "./common/utils/cache/cookies"
  */
 
 /**
- * 获取用户信息和用户权限对应的路由，构建动态路由
+ * 初始化 Vue 应用程序
  */
-async function getLoginInfo() {
-  try {
-    // 获取登录用户信息
-    const res: any = await loginApi.getLoginInfo()
-    const dictRes = await dictApi.getAllData()
-    // 构建系统的路由
-    const menuRouterList = res.data.menuList.filter((e: { path: any, frameUrl: any }) => e.path || e.frameUrl)
-    buildRoutes(menuRouterList)
-    initVue()
-    // 初始化数据字典
-    useDictStore().initData(dictRes.data)
-    // 更新用户信息到pinia
-    useUserStore().setUserLoginInfo(res.data)
-  } catch (e: any) {
-    message.error(e.data ? e.data.msg : e.message)
-    smartSentry.captureError(e)
-    initVue()
-  }
-}
-
-async function initVue() {
+function initVue() {
   const app = createApp(App)
-  // let vueApp = createApp(App);
-  // let app = vueApp
-  //   .use(router)
-  //   .use(store)
-  //   .use(i18n)
-  //   .use(Antd)
-  //   .use(smartEnumPlugin, constantsInfo)
-  //   .use(privilegePlugin)
-  //   .use(dictPlugin)
-  //   .use(JsonViewer);
+  // 安装插件
   installPlugins(app)
-  app.use(pinia).use(router)
+
+  // 重要：确保 Pinia 在其他需要 store 的功能之前初始化
+  app.use(pinia)
+  app.use(router)
+
   // 注入权限
   app.directive("privilege", {
     mounted(el, binding) {
       privilegeDirective(el, binding)
     }
   })
-  // 注册图标组件
-  // Object.keys(antIcons).forEach((key) => {
-  //   app.component(key, antIcons[key]);
-  // });
-  // 全局
-  // app.config.globalProperties.$antIcons = antIcons;
-  // app.config.globalProperties.$lodash = lodash;
 
-  // router 准备就绪后挂载应用
-  router.isReady().then(() => {
+  // 返回初始化好的 app 实例
+  return app
+}
+
+/**
+ * 获取用户信息和用户权限对应的路由，构建动态路由
+ */
+async function getLoginInfo(app: any) {
+  try {
+    // 获取登录用户信息
+    const res: any = await loginApi.getLoginInfo()
+    const dictRes = await dictApi.getAllData()
+
+    // 构建系统的路由
+    const menuRouterList = res.data.menuList.filter((e: { path: any, frameUrl: any }) => e.path || e.frameUrl)
+    buildRoutes(menuRouterList)
+
+    // 初始化数据字典
+    useDictStore().initData(dictRes.data)
+
+    // 更新用户信息到pinia
+    useUserStore().setUserLoginInfo(res.data)
+
+    // 挂载应用
     app.mount("#app")
-  })
+  } catch (e: any) {
+    message.error(e.data ? e.data.msg : e.message)
+    smartSentry.captureError(e)
+
+    // 错误情况下仍然挂载应用
+    app.mount("#app")
+  }
 }
 
-if (!getToken()) {
-  initVue()
-} else {
-  getLoginInfo()
+// 程序入口点
+async function bootstrap() {
+  // 初始化 Vue 应用，但不立即挂载
+  const app = initVue()
+
+  if (!getToken()) {
+    // 用户未登录，直接挂载应用
+    app.mount("#app")
+  } else {
+    // 用户已登录，获取用户信息并构建路由后再挂载
+    await getLoginInfo(app)
+  }
 }
+
+// 启动应用
+bootstrap()

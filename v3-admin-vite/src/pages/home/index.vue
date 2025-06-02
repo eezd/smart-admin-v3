@@ -18,5 +18,8 @@ async function test() {
 <template>
   <div>
     <input type="text">
+    <button v-privilege="111" @click="test">
+      测试
+    </button>
   </div>
 </template>

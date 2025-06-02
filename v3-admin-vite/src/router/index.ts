@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from "vue-router"
+import { loginApi } from "@/common/apis/system/login-api"
 import { setRouteChange } from "@/common/composables/useRouteListener"
 import { useTitle } from "@/common/composables/useTitle"
 import { HOME_PAGE_PATH, PAGE_PATH_404, PAGE_PATH_LOGIN } from "@/common/constants/common-const"
@@ -57,12 +58,12 @@ export const constantRoutes: RouteRecordRaw[] = [
   {
     path: "/",
     component: Layouts,
-    redirect: "/dashboard",
+    redirect: "/home",
     children: [
       {
-        path: "dashboard",
-        component: () => import("@/pages/dashboard/index.vue"),
-        name: "Dashboard",
+        path: "home",
+        component: () => import("@/pages/home/index.vue"),
+        name: "Home",
         meta: {
           title: "首页",
           svgIcon: "dashboard",
@@ -114,7 +115,7 @@ router.beforeEach(async (to, from, next) => {
   // 公共页面，任何时候都可以跳转
   if (to.path === PAGE_PATH_404) {
     next()
-    return true
+    return
   }
 
   // 验证登录
@@ -125,45 +126,56 @@ router.beforeEach(async (to, from, next) => {
     } else {
       next({ path: PAGE_PATH_LOGIN })
     }
-    return true
+    return
   }
 
   // 登录页，则跳转到首页
   if (to.path === PAGE_PATH_LOGIN) {
     next({ path: HOME_PAGE_PATH })
-    return true
+    return
   }
 
   // 首页（ 需要登录 ，但不需要验证权限）
   if (to.path === HOME_PAGE_NAME) {
     next()
-    return true
+    return
   }
 
   // 下载路由对应的 页面组件，并修改组件的Name，如果修改过，则不需要修改
+  const userStore = useUserStore()
+  if (!userStore.menuRouterInitFlag) {
+    try {
+      // 获取最新路由并重新构建
+      const res = await loginApi.getLoginInfo() as any
+      const menuRouterList = res.data.menuList.filter((e: { path: any, frameUrl: any }) => e.path || e.frameUrl)
+      buildRoutes(menuRouterList)
+
+      // 标记路由已加载
+      userStore.menuRouterInitFlag = true
+
+      // 更新用户信息
+      userStore.setUserLoginInfo(res.data)
+
+      // 导航到目标页面
+      next({ ...to, replace: true })
+    } catch (error) {
+      console.error("Failed to load routes:", error)
+      next({ path: PAGE_PATH_LOGIN })
+    }
+    return
+  }
+
+  // 路由已加载，继续处理
   const toRouterInfo = routerMap.get(to.name)
   if (toRouterInfo && isFunction(toRouterInfo.component) && toRouterInfo.meta.renameComponentFlag === false) {
-    // 因为组件component 为 lazy load是个方法，所以可以直接执行 component()方法
-    toRouterInfo.component().then((val: any) => {
-      // 修改组件的name
+    toRouterInfo.component().then((val: { default: { name: unknown } }) => {
       val.default.name = to.meta.componentName
-      // 记录已经修改过 组件的name
       toRouterInfo.meta.renameComponentFlag = true
-      console.log(to.meta.componentName)
+      // console.log(to.meta.componentName)
     })
   }
 
-  // useUserStore().setTagNav(to, from)
-
-  // 设置keepAlive
-  // if (to.meta.keepAlive) {
-  //   nextTick(() => {
-  //     useUserStore().pushKeepAliveIncludes(to.meta.componentName)
-  //   })
-  // }
-
-  console.log(to.meta)
-
+  // console.log(to.meta)
   next()
 })
 
@@ -189,9 +201,9 @@ export function buildRoutes(menuRouterList?: any) {
   // 获取所有vue组件引用地址 用于构建路由
   const modules = import.meta.glob("../pages/**/**.vue")
   // 获取所有vue组件 用于注入name属性 name属性用于keep-alive
-  console.log(modules)
+  // console.log(modules)
 
-  console.log("路由构建开始")
+  // console.log("路由构建开始")
 
   // 1、构建整个路由信息
   for (const e of menuList) {
@@ -249,6 +261,6 @@ export function buildRoutes(menuRouterList?: any) {
     component: Layouts,
     children: routerList
   })
-  console.log("路由构建完成")
-  console.log(router)
+  // console.log("路由构建完成")
+  // console.log(router)
 }

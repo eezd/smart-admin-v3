@@ -39,7 +39,7 @@
     "skipLibCheck": true
   },
   // 需要被编译的文件列表
-  "include": ["**/*.ts", "**/*.tsx", "**/*.vue", "**/*.d.ts"],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.vue", "**/*.d.ts", "src/pages/system/menu/components/MenuTreeSelect.index"],
   // 从编译中排除的文件列表
   "exclude": ["node_modules", "dist"]
 }

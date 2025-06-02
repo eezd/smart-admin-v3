@@ -80,7 +80,7 @@ function handleContentFullClick() {
   <div>
     <!-- 全屏 -->
     <el-tooltip v-if="!props.content" effect="dark" :content="fullscreenTips" placement="bottom">
-      <SvgIcon :name="fullscreenSvgName" @click="handleFullscreenClick" class="svg-icon" />
+      <SvgIcon :name="fullscreenSvgName" class="svg-icon" @click="handleFullscreenClick" />
     </el-tooltip>
     <!-- 内容区 -->
     <el-dropdown v-else :disabled="isFullscreen">

@@ -1,3 +1,4 @@
+import type { SmartEnumPlugin } from "@/plugins/smart-enum"
 import type { Directive } from "vue"
 
 export {}
@@ -6,5 +7,6 @@ export {}
 declare module "vue" {
   export interface ComponentCustomProperties {
     vPermission: Directive<Element, string[]>
+    $smartEnumPlugin: SmartEnumPlugin
   }
 }

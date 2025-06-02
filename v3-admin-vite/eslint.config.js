@@ -22,7 +22,7 @@ export default antfu(
     rules: {
       // vue
       "vue/block-order": ["error", { order: ["script", "template", "style"] }],
-      "vue/attributes-order": "off",
+      "vue/attributes-order": "error",
       // ts
       "ts/no-use-before-define": "off",
       "unused-imports/no-unused-vars": "warn",

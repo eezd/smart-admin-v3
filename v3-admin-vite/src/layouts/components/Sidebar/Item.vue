@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import * as ElementPlusIcons from "@element-plus/icons-vue"
 import Link from "./Link.vue"
 
 interface Props {
@@ -37,6 +38,13 @@ const theOnlyOneChild = computed(() => {
 //   }
 //   menuEmitter.emit("selectTopMenu", menuItem)
 // }
+function getIconComponent(iconName: string) {
+  if (!iconName) return null
+  console.log(iconName)
+  return ElementPlusIcons[iconName as keyof typeof ElementPlusIcons]
+}
+
+console.log(props.item)
 </script>
 
 <template>
@@ -70,7 +78,8 @@ const theOnlyOneChild = computed(() => {
     <Link :to="props.item.path">
       <el-menu-item :index="String(props.item.menuId)">
         <!-- <SvgIcon v-if="theOnlyOneChild.meta.svgIcon" :name="theOnlyOneChild.meta.svgIcon" class="svg-icon" />
-        <component v-else-if="theOnlyOneChild.meta.elIcon" :is="theOnlyOneChild.meta.elIcon" class="el-icon" /> -->
+        <component :is="theOnlyOneChild.meta.elIcon" v-else-if="theOnlyOneChild.meta.elIcon" class="el-icon" /> -->
+        <component :is="props.item.icon" class="el-icon" />
         <template v-if="props.item.menuName" #title>
           <span class="title">{{ props.item.menuName }}</span>
         </template>
@@ -79,8 +88,9 @@ const theOnlyOneChild = computed(() => {
   </template>
   <el-sub-menu v-else :index="String(props.item.menuId)" teleported>
     <template #title>
-      <SvgIcon v-if="props.item.meta?.svgIcon" :name="props.item.meta.svgIcon" class="svg-icon" />
-      <component v-else-if="props.item.meta?.elIcon" :is="props.item.meta.elIcon" class="el-icon" />
+      <!-- <SvgIcon v-if="props.item.meta?.svgIcon" :name="props.item.meta.svgIcon" class="svg-icon" />
+      <component :is="props.item.meta.elIcon" v-else-if="props.item.meta?.elIcon" class="el-icon" /> -->
+      <component :is="props.item.icon" class="el-icon" />
       <span v-if="props.item.menuName" class="title">{{ props.item.menuName }}</span>
     </template>
     <template v-if="props.item.children">
