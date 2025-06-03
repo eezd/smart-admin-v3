@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { PositionItem } from "@/common/apis/system/position-api"
 import type { FormInstance } from "element-plus"
 import { positionApi } from "@/common/apis/system/position-api"
 import { useDevice } from "@/common/composables/useDevice"
@@ -8,31 +9,22 @@ import { cloneDeep } from "lodash-es"
 import { reactive } from "vue"
 import PositionFormDialog from "./components/PositionFormDialog.vue"
 
-// defineOptions({
-//   name: "SysManagement"
-// })
+defineOptions({
+  name: "PositionManagement"
+})
 
 const loading = ref(false)
-// 表格数据
-const tableData = ref<any[]>([])
-// 分页
-const { paginationData, handleCurrentChange, handleSizeChange } = usePagination()
-
-// 表单数据
-const formData = ref<Partial<any> & Partial<any>>(cloneDeep({}))
-// 数据弹窗
-const formDialogVisible = ref<boolean>(false)
-
 const { isMobile } = useDevice()
 
 // #region 搜索栏
-const searchFormRef = ref<FormInstance | null>(null)
+const searchFormRef = ref<FormInstance>()
 const searchData = reactive({
   keywords: undefined
-} as any)
-/**
- * 获取表格数据
- */
+})
+
+const { paginationData, handleCurrentChange, handleSizeChange } = usePagination()
+const tableData = ref<PositionItem[]>([])
+
 async function getTableData(params?: any): Promise<void> {
   try {
     loading.value = true
@@ -57,61 +49,68 @@ function resetSearch() {
 // #endregion
 
 // #region 表单操作
-const selectedRows = ref<any[]>([])
-const handleSelectionChange = (val: any[]) => (selectedRows.value = val)
+const selectedRows = ref<PositionItem[]>([])
+const hasSelectedRows = computed(() => selectedRows.value.length > 0)
+const handleSelectionChange = (val: PositionItem[]) => (selectedRows.value = val)
 
-/**
- * 删除
- *
- * @param row
- */
-function handleDelete(row: any | any[]) {
-  let del_id: number[] = []
-  let msg = ""
-  if (Array.isArray(row)) {
-    del_id = row.map(item => item.positionId)
-    msg = `正在删除：${row.length} 条数据，确认删除？`
-  } else {
-    del_id.push(row.positionId)
-    msg = `正在删除：${row.positionName}，确认删除？`
-  }
+const formDefault: PositionItem = {
+  positionId: undefined,
+  positionName: undefined,
+  level: undefined,
+  sort: 0,
+  remark: undefined,
+  updateTime: undefined,
+  createTime: undefined
+}
+const formData = ref<PositionItem>(cloneDeep(formDefault))
+const formDialogVisible = ref<boolean>(false)
 
-  ElMessageBox.confirm(msg, "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning"
-  }).then(() => {
-    loading.value = true
-    const apiCall = del_id.length > 1
-      ? positionApi.batchDelete(del_id)
-      : positionApi.delete(del_id[0])
+async function handleDelete(row: PositionItem | PositionItem[]): Promise<void> {
+  try {
+    const deleteIds: number[] = []
+    let confirmMessage = ""
 
-    apiCall.then((res) => {
-      ElMessage.success(res.msg)
-      getTableData()
-    }).finally(() => {
-      loading.value = false
+    if (Array.isArray(row)) {
+      const ids = row.map(item => item.positionId).filter((id): id is number => id !== undefined)
+      if (ids.length === 0) return
+      deleteIds.push(...ids)
+      confirmMessage = `正在删除：${row.length} 条数据，确认删除？`
+    } else {
+      if (row.positionId === undefined) return
+      deleteIds.push(row.positionId)
+      confirmMessage = `正在删除：${row.positionName}，确认删除？`
+    }
+
+    await ElMessageBox.confirm(confirmMessage, "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
     })
-  }).catch(() => {})
-}
 
-/**
- * 打开添加弹窗
- */
+    loading.value = true
+    const apiCall = deleteIds.length > 1
+      ? positionApi.batchDelete(deleteIds)
+      : positionApi.delete(deleteIds[0])
+    const response = await apiCall
+
+    ElMessage.success(response.msg)
+    selectedRows.value = []
+    await getTableData()
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("删除失败")
+    }
+  } finally {
+    loading.value = false
+  }
+}
 function openCreateDialog() {
-  // resetForm()
+  formData.value = cloneDeep(formDefault)
   formDialogVisible.value = true
-  formData.value = cloneDeep({})
 }
-
-/**
- * 打开修改弹窗
- *
- * @param row
- */
 function openUpdateDialog(row: any) {
-  formDialogVisible.value = true
   formData.value = cloneDeep(row)
+  formDialogVisible.value = true
 }
 
 // #endregion
@@ -127,14 +126,19 @@ watch(
   },
   { immediate: true }
 )
+// #endregion
 
-// 父组件监听子组件事件
+// #region 数据弹窗监听
+/**
+ * 弹窗提交执行
+ */
 function handleSubmitSuccess() {
   getTableData()
 }
-
+/**
+ * 弹窗关闭执行
+ */
 function handleSubmitCancel() {
-  // 取消提交，不做任何操作
 }
 // #endregion
 </script>
@@ -142,7 +146,7 @@ function handleSubmitCancel() {
 <template>
   <div class="app-container">
     <!-- 搜索栏 -->
-    <el-card v-loading="loading" shadow="never" class="search-wrapper">
+    <el-card v-loading="loading" shadow="never" class="search-wrapper mb-20px">
       <el-form ref="searchFormRef" :inline="true" :model="searchData">
         <el-form-item prop="keywords" label="关键字查询">
           <el-input v-model="searchData.keywords" placeholder="请输入" />
@@ -160,34 +164,28 @@ function handleSubmitCancel() {
 
     <!-- 表单 -->
     <el-card v-loading="loading" shadow="never">
-      <div class="toolbar-wrapper" :style="isMobile ? 'flex-direction: row; gap: 15px' : ''">
-        <div>
-          <el-button
-            type="primary"
-            :icon="CirclePlus"
-            @click="openCreateDialog()"
-          >
-            新增
-          </el-button>
-          <el-button
-            type="danger"
-            :icon="Delete"
-            @click="handleDelete(selectedRows)"
-          >
-            批量删除
-          </el-button>
-        </div>
-        <div>
-          <el-tooltip content="刷新当前页">
-            <el-button type="primary" :icon="RefreshRight" circle @click="() => getTableData()" />
-          </el-tooltip>
-        </div>
+      <div class="toolbar-wrapper mb-20px">
+        <el-button
+          type="primary"
+          :icon="CirclePlus"
+          @click="openCreateDialog()"
+        >
+          新增
+        </el-button>
+        <el-button
+          type="danger"
+          :icon="Delete"
+          :disabled="!hasSelectedRows"
+          @click="handleDelete(selectedRows)"
+        >
+          批量删除
+        </el-button>
       </div>
-      <div class="table-wrapper">
+      <div class="toolbar-wrapper flex justify-between items-center mb-10px">
         <el-table
           :data="tableData" border :header-cell-style="{
-            color: '#000', // 白色文字
-            fontWeight: 'bold', // 加粗
+            color: '#000',
+            fontWeight: 'bold',
           }" @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="50" />
@@ -247,20 +245,9 @@ function handleSubmitCancel() {
 
 <style lang="scss" scoped>
 .search-wrapper {
-  margin-bottom: 20px;
   :deep(.el-card__body) {
     padding-bottom: 2px;
   }
-}
-
-.toolbar-wrapper {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.table-wrapper {
-  margin-bottom: 20px;
 }
 
 .pager-wrapper {

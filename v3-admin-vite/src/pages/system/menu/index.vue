@@ -28,12 +28,20 @@ const searchData = reactive<SearchParams>({
   cacheFlag: undefined,
   visibleFlag: undefined
 })
-async function getTableData(): Promise<void> {
+
+const menuTreeData = ref<MenuTreeItem[]>([])
+const menuTypeColorArray: Record<number, "primary" | "warning" | "success" | "info" | "danger"> = ["primary", "warning", "success"]
+
+async function getTableData(params?: SearchParams): Promise<void> {
   try {
     loading.value = true
     const response = await menuApi.queryList()
-    const filtedMenuList = filterMenuByQueryForm(response.data, searchData)
-    menuTreeData.value = buildMenuTableTree(filtedMenuList)
+    if (params === undefined) {
+      menuTreeData.value = buildMenuTableTree(response.data)
+    } else {
+      const filtedMenuList = filterMenuByQueryForm(response.data, params)
+      menuTreeData.value = buildMenuTableTree(filtedMenuList)
+    }
   } catch {
     menuTreeData.value = []
   } finally {
@@ -41,7 +49,7 @@ async function getTableData(): Promise<void> {
   }
 }
 function handleSearch() {
-  getTableData()
+  getTableData(searchData)
 }
 function resetSearch() {
   searchFormRef.value?.resetFields()
@@ -84,13 +92,11 @@ const formDefault: MenuItem = {
 const formData = ref<MenuItem>(cloneDeep(formDefault))
 const formDialogVisible = ref<boolean>(false)
 
-const menuTreeData = ref<MenuTreeItem[]>([])
-const menuTypeColorArray: Record<number, "primary" | "warning" | "success" | "info" | "danger"> = ["primary", "warning", "success"]
-
 async function handleDelete(row: MenuItem | MenuItem[]) {
   try {
     const deleteIds: number[] = []
     let confirmMessage = ""
+
     if (Array.isArray(row)) {
       const ids = row.map(item => item.menuId).filter((id): id is number => id !== undefined)
       if (ids.length === 0) return
@@ -101,19 +107,20 @@ async function handleDelete(row: MenuItem | MenuItem[]) {
       deleteIds.push(row.menuId)
       confirmMessage = `正在删除：${row.menuName}，确认删除？`
     }
+
     await ElMessageBox.confirm(confirmMessage, "提示", {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning"
     })
+
     loading.value = true
     const response = await menuApi.batchDelete(deleteIds)
     ElMessage.success(response.msg)
-    await getTableData()
     selectedRows.value = []
+    await getTableData()
   } catch (error) {
     if (error !== "cancel") {
-      console.error("删除失败:", error)
       ElMessage.error("删除失败")
     }
   } finally {
@@ -159,16 +166,8 @@ getTableData()
 <template>
   <div class="app-container p-20px">
     <!-- 搜索栏 -->
-    <el-card
-      v-loading="loading"
-      shadow="never"
-      class="search-wrapper mb-20px"
-    >
-      <el-form
-        ref="searchFormRef"
-        :inline="true"
-        :model="searchData"
-      >
+    <el-card v-loading="loading" shadow="never" class="search-wrapper mb-20px">
+      <el-form ref="searchFormRef" :inline="true" :model="searchData">
         <!-- 第一行查询条件 -->
         <el-form-item prop="keywords" label="关键字">
           <el-input
@@ -294,29 +293,22 @@ getTableData()
 
     <!-- 表单 -->
     <el-card v-loading="loading" shadow="never">
-      <div class="toolbar-wrapper flex justify-between items-center mb-10px">
-        <div class="toolbar-left flex gap-10px">
-          <el-button
-            type="primary"
-            :icon="CirclePlus"
-            @click="openCreateDialog()"
-          >
-            新增
-          </el-button>
-          <el-button
-            type="danger"
-            :icon="Delete"
-            :disabled="!hasSelectedRows"
-            @click="handleDelete(selectedRows)"
-          >
-            批量删除
-          </el-button>
-        </div>
-        <div class="toolbar-right">
-          <el-tooltip content="刷新当前页">
-            <el-button type="primary" :icon="RefreshRight" circle :loading="loading" @click="() => getTableData()" />
-          </el-tooltip>
-        </div>
+      <div class="toolbar-wrapper  mb-20px">
+        <el-button
+          type="primary"
+          :icon="CirclePlus"
+          @click="openCreateDialog()"
+        >
+          新增
+        </el-button>
+        <el-button
+          type="danger"
+          :icon="Delete"
+          :disabled="!hasSelectedRows"
+          @click="handleDelete(selectedRows)"
+        >
+          批量删除
+        </el-button>
       </div>
       <el-table
         :data="menuTreeData"

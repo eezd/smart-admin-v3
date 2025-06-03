@@ -1,12 +1,9 @@
 <script lang="ts" setup>
+import type { PositionCreateRequest, PositionItem, PositionUpdateRequest } from "@/common/apis/system/position-api"
 import type { FormInstance, FormRules } from "element-plus"
 import { positionApi } from "@/common/apis/system/position-api"
 import { useDevice } from "@/common/composables/useDevice"
-import { cloneDeep } from "lodash-es"
 
-/**
- * defineEmits
- */
 // #region defineEmits
 const emit = defineEmits<{
   submitSuccess: []
@@ -14,13 +11,10 @@ const emit = defineEmits<{
 }>()
 // #endregion
 
-/**
- * defineModel
- */
 // #region defineModel
 const loading = defineModel<boolean>("loading", { required: true })
 const dialogVisible = defineModel<boolean>("formDialogVisible", { required: true })
-const formData = defineModel<any>(
+const formData = defineModel<PositionItem>(
   "formData",
   {
     required: true
@@ -34,9 +28,7 @@ const title = computed(() => {
 
 const { isMobile } = useDevice()
 
-// 组件实例 (权限树)
 const formRef = ref<FormInstance | null>(null)
-
 const formRules: FormRules<any> = {
 }
 
@@ -49,27 +41,18 @@ function handleCreateOrUpdate() {
     if (valid) {
       try {
         loading.value = true
-        console.log(formData.value)
         if (formData.value.positionId) {
-          await positionApi.update(formData.value)
+          await positionApi.update(formData.value as PositionUpdateRequest)
         } else {
-          await positionApi.create(formData.value)
+          await positionApi.create(formData.value as PositionCreateRequest)
         }
+        emit("submitSuccess")
       } finally {
         dialogVisible.value = false
         loading.value = false
       }
     }
   })
-}
-
-/**
- * 重置表单
- */
-function resetForm() {
-  formRef.value?.clearValidate()
-  formRef.value?.resetFields()
-  formData.value = cloneDeep({})
 }
 
 function handleCancel() {
@@ -79,7 +62,7 @@ function handleCancel() {
 </script>
 
 <template>
-  <el-dialog v-model="dialogVisible" :title="title" :width="isMobile ? '80%' : '40%'" @closed="resetForm">
+  <el-dialog v-model="dialogVisible" :title="title" :width="isMobile ? '80%' : '40%'" destroy-on-close>
     <el-form ref="formRef" label-width="80px" :model="formData" :rules="formRules" label-position="left">
       <el-form-item prop="positionName" label="职务名称">
         <el-input v-model="formData.positionName" placeholder="请输入" />

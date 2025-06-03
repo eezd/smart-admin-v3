@@ -1,13 +1,10 @@
 <script lang="ts" setup>
+import type { DepartmentCreateRequest, DepartmentItem, DepartmentUpdateRequest } from "@@/apis/system/department-api"
 import type { FormInstance, FormRules } from "element-plus"
 import { useDevice } from "@/common/composables/useDevice"
 import { departmentApi } from "@@/apis/system/department-api"
 import DepartmentTreeSelect from "@@/components/System/DepartmentTreeSelect/index.vue"
-import { cloneDeep } from "lodash-es"
 
-/**
- * defineEmits
- */
 // #region defineEmits
 const emit = defineEmits<{
   submitSuccess: []
@@ -15,13 +12,10 @@ const emit = defineEmits<{
 }>()
 // #endregion
 
-/**
- * defineModel
- */
 // #region defineModel
 const loading = defineModel<boolean>("loading", { required: true })
 const dialogVisible = defineModel<boolean>("formDialogVisible", { required: true })
-const formData = defineModel<any>(
+const formData = defineModel<DepartmentItem>(
   "formData",
   {
     required: true
@@ -30,7 +24,7 @@ const formData = defineModel<any>(
 // #endregion
 
 const title = computed(() => {
-  return formData.value.positionId === undefined ? "新增" : "编辑"
+  return formData.value.departmentId === undefined ? "新增" : "编辑"
 })
 
 const { isMobile } = useDevice()
@@ -55,11 +49,10 @@ function handleCreateOrUpdate() {
     if (valid) {
       try {
         loading.value = true
-        console.log(formData.value)
         if (formData.value.departmentId) {
-          await departmentApi.update(formData.value)
+          await departmentApi.update(formData.value as DepartmentUpdateRequest)
         } else {
-          await departmentApi.create(formData.value)
+          await departmentApi.create(formData.value as DepartmentCreateRequest)
         }
         emit("submitSuccess") // 通知父组件刷新数据
       } finally {
@@ -70,15 +63,6 @@ function handleCreateOrUpdate() {
   })
 }
 
-/**
- * 重置表单
- */
-function resetForm() {
-  formRef.value?.clearValidate()
-  formRef.value?.resetFields()
-  formData.value = cloneDeep({})
-}
-
 function handleCancel() {
   dialogVisible.value = false
   emit("submitCancel")
@@ -86,7 +70,7 @@ function handleCancel() {
 </script>
 
 <template>
-  <el-dialog v-model="dialogVisible" :title="title" :width="isMobile ? '80%' : '40%'" @closed="resetForm">
+  <el-dialog v-model="dialogVisible" :title="title" :width="isMobile ? '80%' : '40%'" destroy-on-close>
     <el-form ref="formRef" label-width="80px" :model="formData" :rules="formRules" label-position="left">
       <el-form-item prop="parentId" label="上级部门">
         <DepartmentTreeSelect v-model:enterprise-id="formData.parentId" />

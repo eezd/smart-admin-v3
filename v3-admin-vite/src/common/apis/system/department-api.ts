@@ -63,7 +63,7 @@ export interface DepartmentItem {
   /**
    * 父级部门id
    */
-  parentId?: number
+  parentId: number
   /**
    * 排序
    */

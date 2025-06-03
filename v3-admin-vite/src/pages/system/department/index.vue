@@ -1,6 +1,6 @@
 <script lang="ts" setup>
+import type { DepartmentItem } from "@@/apis/system/department-api"
 import type { FormInstance } from "element-plus"
-import { useDevice } from "@/common/composables/useDevice"
 import { departmentApi } from "@@/apis/system/department-api"
 import { Refresh, Search } from "@element-plus/icons-vue"
 import { cloneDeep } from "lodash-es"
@@ -8,30 +8,21 @@ import { reactive } from "vue"
 
 import DepartmentDialog from "./components/DepartmentDialog.vue"
 
-// defineOptions({
-//   name: "SysManagement"
-// })
+defineOptions({
+  name: "DepartmentManagement"
+})
+
+const loading = ref(false)
+
+// #region 搜索栏
+const searchFormRef = ref<FormInstance | null>(null)
+const searchData = reactive<any>({
+  keywords: undefined
+})
 
 const departmentData = ref<any[]>([])
 const departmentTreeData = ref<any[]>([])
 
-const loading = ref(false)
-
-// 表单数据
-const formData = ref<Partial<any> & Partial<any>>(cloneDeep({}))
-// 数据弹窗
-const formDialogVisible = ref<boolean>(false)
-
-const { isMobile } = useDevice()
-
-// #region 搜索栏
-const searchFormRef = ref<FormInstance | null>(null)
-const searchData = reactive({
-  keywords: undefined
-} as any)
-/**
- * 获取表格数据
- */
 async function getTableData(): Promise<void> {
   try {
     loading.value = true
@@ -48,7 +39,6 @@ async function getTableData(): Promise<void> {
     loading.value = false
   }
 }
-
 // 递归过滤树形数据
 function filterTreeData(data: any[], keywords: string): any[] {
   return data.filter((node) => {
@@ -60,14 +50,12 @@ function filterTreeData(data: any[], keywords: string): any[] {
     return false
   })
 }
-
 // 处理搜索
 function handleSearch() {
   if (!searchData.keywords) {
     getTableData()
     return
   }
-
   const filteredData = filterTreeData(departmentTreeData.value, searchData.keywords)
   departmentTreeData.value = filteredData
 }
@@ -79,60 +67,62 @@ function resetSearch() {
 // #endregion
 
 // #region 表单操作
+const formDefault: DepartmentItem = {
+  departmentId: undefined,
+  name: "",
+  managerId: undefined,
+  managerName: "",
+  parentId: 0,
+  sort: 0,
+  updateTime: undefined,
+  createTime: undefined
+}
+const formData = ref<DepartmentItem>(cloneDeep(formDefault))
+const formDialogVisible = ref<boolean>(false)
 
-/**
- * 删除
- *
- * @param row
- */
-function handleDelete(row: any) {
-  let msg = ""
-  msg = `正在删除：${row.name}，确认删除？`
-  ElMessageBox.confirm(msg, "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning"
-  }).then(() => {
-    loading.value = true
-    departmentApi.delete(row.departmentId).then((res) => {
-      ElMessage.success(res.msg)
-      getTableData()
-    }).finally(() => {
-      loading.value = false
+async function handleDelete(row: any) {
+  try {
+    let confirmMessage = ""
+    confirmMessage = `正在删除：${row.name}，确认删除？`
+    await ElMessageBox.confirm(confirmMessage, "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
     })
-  }).catch(() => {})
+    loading.value = true
+    const response = await departmentApi.delete(row.departmentId)
+    ElMessage.success(response.msg)
+    await getTableData()
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("删除失败")
+    }
+  } finally {
+    loading.value = false
+  }
 }
-
-/**
- * 打开添加弹窗
- */
 function openCreateDialog(departmentId?: number) {
-  // resetForm()
+  formData.value = cloneDeep(formDefault)
+  formData.value.parentId = departmentId || 0
   formDialogVisible.value = true
-  formData.value = cloneDeep({})
-  formData.value.parentId = departmentId
 }
-
-/**
- * 打开修改弹窗
- *
- * @param row
- */
 function openUpdateDialog(row: any) {
-  formDialogVisible.value = true
   formData.value = cloneDeep(row)
+  formDialogVisible.value = true
 }
-
 // #endregion
 
-// #region 监听
-// 父组件监听子组件事件
+// #region 数据弹窗监听
+/**
+ * 弹窗提交执行
+ */
 function handleSubmitSuccess() {
   getTableData()
 }
-
+/**
+ * 弹窗关闭执行
+ */
 function handleSubmitCancel() {
-  // 取消提交，不做任何操作
 }
 // #endregion
 

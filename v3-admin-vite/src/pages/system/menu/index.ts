@@ -37,6 +37,8 @@ export interface MenuTreeItem extends MenuItem {
 export function filterMenuByQueryForm(menuList: MenuItem[], queryForm: SearchParams) {
   if (!menuList || menuList.length === 0) {
     return []
+  } else if (queryForm === undefined) {
+    return menuList
   }
   const filterResult = []
   for (const menu of menuList) {

@@ -81,13 +81,12 @@ function handleCreateOrUpdate() {
     if (valid) {
       try {
         loading.value = true
-        console.log(formData.value)
         if (formData.value.menuId) {
           await menuApi.update(formData.value as MenuUpdateRequest)
         } else {
           await menuApi.create(formData.value)
         }
-        emit("submitSuccess") // 通知父组件刷新数据
+        emit("submitSuccess")
       } finally {
         dialogVisible.value = false
         loading.value = false

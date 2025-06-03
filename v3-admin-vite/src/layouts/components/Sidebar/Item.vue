@@ -43,8 +43,6 @@ function getIconComponent(iconName: string) {
   console.log(iconName)
   return ElementPlusIcons[iconName as keyof typeof ElementPlusIcons]
 }
-
-console.log(props.item)
 </script>
 
 <template>
