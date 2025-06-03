@@ -5,8 +5,8 @@ import { departmentApi } from "@@/apis/system/department-api"
  * defineModel
  */
 // #region defineModel
-const enterpriseId = defineModel<number>(
-  "enterpriseId",
+const departmentId = defineModel<number>(
+  "value",
   {
     required: true
   }
@@ -21,12 +21,12 @@ departmentApi.queryTree().then(({ data }) => {
 
 <template>
   <el-tree-select
-    v-model="enterpriseId"
+    v-model="departmentId"
     :data="departmentTreeData"
     node-key="departmentId"
     :props="{ label: 'name', children: 'children' }"
     placeholder="请选择上级部门"
-    :default-expanded-keys="[enterpriseId]"
+    :default-expanded-keys="[departmentId]"
     :expand-on-click-node="false"
     check-strictly
     style="width: 100%"

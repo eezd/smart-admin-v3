@@ -73,7 +73,7 @@ function handleCancel() {
   <el-dialog v-model="dialogVisible" :title="title" :width="isMobile ? '80%' : '40%'" destroy-on-close>
     <el-form ref="formRef" label-width="80px" :model="formData" :rules="formRules" label-position="left">
       <el-form-item prop="parentId" label="上级部门">
-        <DepartmentTreeSelect v-model:enterprise-id="formData.parentId" />
+        <DepartmentTreeSelect v-model:value="formData.parentId" />
       </el-form-item>
       <el-form-item prop="name" label="部门名称">
         <el-input v-model="formData.name" placeholder="请输入" />
