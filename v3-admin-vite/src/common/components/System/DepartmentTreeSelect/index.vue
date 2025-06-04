@@ -5,7 +5,7 @@ import { departmentApi } from "@@/apis/system/department-api"
  * defineModel
  */
 // #region defineModel
-const departmentId = defineModel<number>(
+const departmentId = defineModel<number | undefined>(
   "value",
   {
     required: true

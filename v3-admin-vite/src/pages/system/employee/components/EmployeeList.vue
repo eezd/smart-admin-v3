@@ -1,13 +1,18 @@
 <script lang="ts" setup>
 import type { EmployeeItem } from "@/common/apis/system/employee-api"
 import type { FormInstance } from "element-plus"
+import { log } from "node:console"
 import { employeeApi } from "@/common/apis/system/employee-api"
 import { useDevice } from "@/common/composables/useDevice"
 import { usePagination } from "@/common/composables/usePagination"
+import { smartSentry } from "@/lib/smart-sentry"
 import { GENDER_ENUM } from "@@/constants/common-const"
 import { CirclePlus, Delete, Refresh, RefreshRight, Search } from "@element-plus/icons-vue"
+import row from "element-plus/es/components/row/index.mjs"
+import { id } from "element-plus/es/locales.mjs"
 import { cloneDeep } from "lodash-es"
-import { reactive } from "vue"
+import { createVNode, reactive } from "vue"
+import DepartmentTreeDialog from "./DepartmentTreeDialog.vue"
 import EmployeeFormDialog from "./EmployeeFormDialog.vue"
 
 defineOptions({
@@ -55,13 +60,17 @@ const hasSelectedRows = computed(() => selectedRows.value.length > 0)
 const handleSelectionChange = (val: EmployeeItem[]) => (selectedRows.value = val)
 
 const formDefault: EmployeeItem = {
+  employeeId: undefined,
+  actualName: undefined,
+  departmentId: 0,
+  disabledFlag: false,
+  leaveFlag: false,
+  gender: GENDER_ENUM.MAN.value,
+  loginName: undefined,
+  phone: undefined,
+  roleIdList: undefined,
   positionId: undefined,
-  positionName: undefined,
-  level: undefined,
-  sort: 0,
-  remark: undefined,
-  updateTime: undefined,
-  createTime: undefined
+  email: undefined
 }
 const formData = ref<EmployeeItem>(cloneDeep(formDefault))
 const formDialogVisible = ref<boolean>(false)
@@ -72,14 +81,14 @@ async function handleDelete(row: EmployeeItem | EmployeeItem[]): Promise<void> {
     let confirmMessage = ""
 
     if (Array.isArray(row)) {
-      const ids = row.map(item => item.positionId).filter((id): id is number => id !== undefined)
+      const ids = row.map(item => item.employeeId).filter((id): id is number => id !== undefined)
       if (ids.length === 0) return
       deleteIds.push(...ids)
       confirmMessage = `正在删除：${row.length} 条数据，确认删除？`
     } else {
-      if (row.positionId === undefined) return
-      deleteIds.push(row.positionId)
-      confirmMessage = `正在删除：${row.positionName}，确认删除？`
+      if (row.employeeId === undefined) return
+      deleteIds.push(row.employeeId)
+      confirmMessage = `正在删除：${row.loginName}，确认删除？`
     }
 
     await ElMessageBox.confirm(confirmMessage, "提示", {
@@ -89,10 +98,7 @@ async function handleDelete(row: EmployeeItem | EmployeeItem[]): Promise<void> {
     })
 
     loading.value = true
-    const apiCall = deleteIds.length > 1
-      ? employeeApi.batchDelete(deleteIds)
-      : employeeApi.delete(deleteIds[0])
-    const response = await apiCall
+    const response = await employeeApi.batchDelete(deleteIds)
 
     ElMessage.success(response.msg)
     selectedRows.value = []
@@ -109,17 +115,111 @@ function openCreateDialog() {
   formData.value = cloneDeep(formDefault)
   formDialogVisible.value = true
 }
-function openUpdateDepartmentDialog() {
-  // formData.value = cloneDeep(formDefault)
-  // formDialogVisible.value = true
-}
+
 function openUpdateDialog(row: any) {
   formData.value = cloneDeep(row)
   formDialogVisible.value = true
 }
-function resetPassword(row: any) {
+// #endregion
+
+// #region 重置密码
+/**
+ * 重置用户密码
+ */
+async function resetPassword(id: number, name: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确定要重置密码吗？", "提醒", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    })
+
+    loading.value = true
+    const { data: password } = await employeeApi.resetPassword(id)
+
+    ElMessage.success(`重置成功，新密码：${password}`)
+    await showPasswordModal(name, password)
+    getTableData()
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("重置密码失败:", error)
+      ElMessage.error("密码重置失败，请稍后重试")
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
+/**
+ * 显示密码弹窗并处理复制
+ */
+async function showPasswordModal(loginName: string, password: string): Promise<void> {
+  const copyText = `登录名：${loginName}\n密码：${password}`
+
+  try {
+    await ElMessageBox({
+      title: "密码重置成功",
+      message: h("div", { style: "padding: 20px 0;" }, [
+        h("div", { style: "font-weight: bold; font-size: 16px; margin-bottom: 8px;" }, `登录名: ${loginName}`),
+        h("div", { style: "font-weight: bold; font-size: 16px;" }, `密码: ${password}`)
+      ]),
+      confirmButtonText: "复制密码并关闭",
+      showCancelButton: false,
+      closeOnClickModal: false,
+      closeOnPressEscape: false,
+      showClose: false,
+      type: "success"
+    })
+
+    const success = await copyToClipboard(copyText)
+    ElMessage[success ? "success" : "warning"](
+      success ? "密码已复制到剪贴板" : "复制失败，请手动复制"
+    )
+  } catch (error) {
+    // 用户关闭弹窗，无需处理
+  }
+}
+
+/**
+ * 复制到剪贴板
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    // 优先使用现代API
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+
+    // 降级方案
+    const textArea = document.createElement("textarea")
+    textArea.value = text
+    Object.assign(textArea.style, {
+      position: "fixed",
+      left: "-9999px",
+      opacity: "0"
+    })
+
+    document.body.appendChild(textArea)
+    textArea.select()
+    const success = document.execCommand("copy")
+    document.body.removeChild(textArea)
+
+    return success
+  } catch {
+    return false
+  }
+}
+// #endregion
+
+// #region 部门树
+const DepartmentTreeDialogVisible = ref<boolean>(false)
+const DepartmentTreeDialogData = computed(() =>
+  selectedRows.value.map(item => item.departmentId)
+)
+function openUpdateDepartmentDialog(row: EmployeeItem | EmployeeItem[]) {
+  DepartmentTreeDialogVisible.value = true
+}
 // #endregion
 
 // #region 监听
@@ -190,7 +290,7 @@ function handleSubmitCancel() {
         <el-button
           type="warning"
           :icon="CirclePlus"
-          @click="openUpdateDepartmentDialog()"
+          @click="openUpdateDepartmentDialog(selectedRows)"
         >
           批量调整部门
         </el-button>
@@ -254,7 +354,7 @@ function handleSubmitCancel() {
                 type="warning"
                 bg
                 size="small"
-                @click="resetPassword(scope.row)"
+                @click="resetPassword(scope.row.employeeId, scope.row.loginName)"
               >
                 重置密码
               </el-button>
@@ -291,6 +391,14 @@ function handleSubmitCancel() {
       v-model:loading="loading"
       v-model:form-dialog-visible="formDialogVisible"
       v-model:form-data="formData"
+      @submit-success="handleSubmitSuccess"
+      @submit-cancel="handleSubmitCancel"
+    />
+
+    <DepartmentTreeDialog
+      v-model:loading="loading"
+      v-model:form-dialog-visible="DepartmentTreeDialogVisible"
+      :employee-id-list="DepartmentTreeDialogData"
       @submit-success="handleSubmitSuccess"
       @submit-cancel="handleSubmitCancel"
     />

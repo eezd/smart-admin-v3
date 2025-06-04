@@ -50,13 +50,6 @@ export const employeeApi = {
       data
     })
   },
-  /** 删除员工 */
-  delete: (employeeId: number) => {
-    return request<ApiResponseData<any>>({
-      url: `/employee/update/password/reset/${employeeId}`,
-      method: "GET"
-    })
-  },
   /** 批量删除员工 */
   batchDelete: (data: number[]) => {
     return request<ApiResponseData<any>>({
@@ -76,7 +69,7 @@ export const employeeApi = {
   /** 重置员工密码 */
   resetPassword: (employeeId: number) => {
     return request<ApiResponseData<any>>({
-      url: `employee/resetPassword/${employeeId}`,
+      url: `employee/update/password/reset/${employeeId}`,
       method: "GET"
     })
   },
