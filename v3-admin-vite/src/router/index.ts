@@ -108,6 +108,11 @@ export function resetRouter() {
 
 const routerMap = new Map()
 
+let isLoadingUserInfo = false
+let loadUserInfoRetryCount = 0
+const MAX_RETRY_COUNT = 3
+const RETRY_DELAY = 2000
+
 router.beforeEach(async (to, from, next) => {
   // 进度条开启
   nProgress.start()
@@ -121,6 +126,9 @@ router.beforeEach(async (to, from, next) => {
   // 验证登录
   if (!getToken()) {
     useUserStore().logout()
+    // 清除重试计数
+    loadUserInfoRetryCount = 0
+    isLoadingUserInfo = false
     if (to.path === PAGE_PATH_LOGIN) {
       next()
     } else {
@@ -144,6 +152,22 @@ router.beforeEach(async (to, from, next) => {
   // 下载路由对应的 页面组件，并修改组件的Name，如果修改过，则不需要修改
   const userStore = useUserStore()
   if (!userStore.menuRouterInitFlag) {
+    // 如果正在加载用户信息，则等待
+    if (isLoadingUserInfo) {
+      console.log("正在加载用户信息，请稍候...")
+      return
+    }
+
+    // 检查重试次数
+    if (loadUserInfoRetryCount >= MAX_RETRY_COUNT) {
+      console.error("获取用户信息失败次数过多，请检查网络连接")
+      useUserStore().logout()
+      next({ path: PAGE_PATH_LOGIN })
+      return
+    }
+
+    isLoadingUserInfo = true
+
     try {
       // 获取最新路由并重新构建
       const res = await loginApi.getLoginInfo() as any
@@ -156,11 +180,28 @@ router.beforeEach(async (to, from, next) => {
       // 更新用户信息
       userStore.setUserLoginInfo(res.data)
 
+      // 重置重试计数
+      loadUserInfoRetryCount = 0
+      isLoadingUserInfo = false
+
       // 导航到目标页面
       next({ ...to, replace: true })
     } catch (error) {
       console.error("Failed to load routes:", error)
-      next({ path: PAGE_PATH_LOGIN })
+      isLoadingUserInfo = false
+      loadUserInfoRetryCount++
+
+      // 如果是网络错误且未达到最大重试次数，则延迟重试
+      if (loadUserInfoRetryCount < MAX_RETRY_COUNT) {
+        console.log(`获取用户信息失败，${RETRY_DELAY / 1000}秒后重试... (${loadUserInfoRetryCount}/${MAX_RETRY_COUNT})`)
+        setTimeout(() => {
+          next({ ...to, replace: true })
+        }, RETRY_DELAY)
+      } else {
+        // 达到最大重试次数，跳转到登录页
+        useUserStore().logout()
+        next({ path: PAGE_PATH_LOGIN })
+      }
     }
     return
   }
