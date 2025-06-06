@@ -1,17 +1,13 @@
 <script lang="ts" setup>
 import type { EmployeeItem } from "@/common/apis/system/employee-api"
 import type { FormInstance } from "element-plus"
-import { log } from "node:console"
 import { employeeApi } from "@/common/apis/system/employee-api"
 import { useDevice } from "@/common/composables/useDevice"
 import { usePagination } from "@/common/composables/usePagination"
-import { smartSentry } from "@/lib/smart-sentry"
 import { GENDER_ENUM } from "@@/constants/common-const"
-import { CirclePlus, Delete, Refresh, RefreshRight, Search } from "@element-plus/icons-vue"
-import row from "element-plus/es/components/row/index.mjs"
-import { id } from "element-plus/es/locales.mjs"
+import { CirclePlus, Delete, Refresh, Search } from "@element-plus/icons-vue"
 import { cloneDeep } from "lodash-es"
-import { createVNode, reactive } from "vue"
+import { reactive } from "vue"
 import DepartmentTreeDialog from "./DepartmentTreeDialog.vue"
 import EmployeeFormDialog from "./EmployeeFormDialog.vue"
 
@@ -25,6 +21,7 @@ const { isMobile } = useDevice()
 // #region 搜索栏
 const searchFormRef = ref<FormInstance>()
 const searchData = reactive({
+  disabledFlag: undefined,
   keywords: undefined
 })
 
@@ -115,7 +112,6 @@ function openCreateDialog() {
   formData.value = cloneDeep(formDefault)
   formDialogVisible.value = true
 }
-
 function openUpdateDialog(row: any) {
   formData.value = cloneDeep(row)
   formDialogVisible.value = true
@@ -123,9 +119,6 @@ function openUpdateDialog(row: any) {
 // #endregion
 
 // #region 重置密码
-/**
- * 重置用户密码
- */
 async function resetPassword(id: number, name: string): Promise<void> {
   try {
     await ElMessageBox.confirm("确定要重置密码吗？", "提醒", {
@@ -137,8 +130,30 @@ async function resetPassword(id: number, name: string): Promise<void> {
     loading.value = true
     const { data: password } = await employeeApi.resetPassword(id)
 
-    ElMessage.success(`重置成功，新密码：${password}`)
-    await showPasswordModal(name, password)
+    const copyText = `账号：${name}\n 密码：${password}`
+
+    try {
+      await navigator.clipboard.writeText(copyText)
+      await ElMessageBox.alert(
+        `重置成功！<br/>账号：${name}<br/>密码：${password}<br/>账号和密码已复制到剪贴板`,
+        "密码重置成功",
+        {
+          confirmButtonText: "确定",
+          type: "success",
+          dangerouslyUseHTMLString: true
+        }
+      )
+    } catch (clipboardError) {
+      await ElMessageBox.alert(
+        `重置成功！<br/>账号：${name}<br/>密码：${password}<br/>请手动复制上述信息`,
+        "密码重置成功",
+        {
+          confirmButtonText: "确定",
+          type: "success",
+          dangerouslyUseHTMLString: true
+        }
+      )
+    }
     getTableData()
   } catch (error) {
     if (error !== "cancel") {
@@ -149,76 +164,24 @@ async function resetPassword(id: number, name: string): Promise<void> {
     loading.value = false
   }
 }
-
-/**
- * 显示密码弹窗并处理复制
- */
-async function showPasswordModal(loginName: string, password: string): Promise<void> {
-  const copyText = `登录名：${loginName}\n密码：${password}`
-
-  try {
-    await ElMessageBox({
-      title: "密码重置成功",
-      message: h("div", { style: "padding: 20px 0;" }, [
-        h("div", { style: "font-weight: bold; font-size: 16px; margin-bottom: 8px;" }, `登录名: ${loginName}`),
-        h("div", { style: "font-weight: bold; font-size: 16px;" }, `密码: ${password}`)
-      ]),
-      confirmButtonText: "复制密码并关闭",
-      showCancelButton: false,
-      closeOnClickModal: false,
-      closeOnPressEscape: false,
-      showClose: false,
-      type: "success"
-    })
-
-    const success = await copyToClipboard(copyText)
-    ElMessage[success ? "success" : "warning"](
-      success ? "密码已复制到剪贴板" : "复制失败，请手动复制"
-    )
-  } catch (error) {
-    // 用户关闭弹窗，无需处理
-  }
-}
-
-/**
- * 复制到剪贴板
- */
-async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    // 优先使用现代API
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text)
-      return true
-    }
-
-    // 降级方案
-    const textArea = document.createElement("textarea")
-    textArea.value = text
-    Object.assign(textArea.style, {
-      position: "fixed",
-      left: "-9999px",
-      opacity: "0"
-    })
-
-    document.body.appendChild(textArea)
-    textArea.select()
-    const success = document.execCommand("copy")
-    document.body.removeChild(textArea)
-
-    return success
-  } catch {
-    return false
-  }
-}
 // #endregion
 
 // #region 部门树
 const DepartmentTreeDialogVisible = ref<boolean>(false)
-const DepartmentTreeDialogData = computed(() =>
-  selectedRows.value.map(item => item.departmentId)
+const SelectedEmployeeIdList = computed(() =>
+  selectedRows.value.map(item => item.employeeId)
 )
-function openUpdateDepartmentDialog(row: EmployeeItem | EmployeeItem[]) {
+function openUpdateDepartmentDialog() {
   DepartmentTreeDialogVisible.value = true
+}
+// #endregion
+
+// #region 数据弹窗监听
+/**
+ * 弹窗提交执行
+ */
+function handleSubmitSuccess() {
+  getTableData()
 }
 // #endregion
 
@@ -233,20 +196,12 @@ watch(
   },
   { immediate: true }
 )
-// #endregion
-
-// #region 数据弹窗监听
-/**
- * 弹窗提交执行
- */
-function handleSubmitSuccess() {
-  getTableData()
-}
-/**
- * 弹窗关闭执行
- */
-function handleSubmitCancel() {
-}
+watch(
+  [() => searchData.disabledFlag],
+  () => {
+    getTableData(searchData)
+  }
+)
 // #endregion
 </script>
 
@@ -257,14 +212,20 @@ function handleSubmitCancel() {
       <div class="flex justify-between items-center mb-10px">
         <span>部门人员</span>
         <el-form ref="searchFormRef" :inline="true" :model="searchData">
-          <!-- <el-form-item label="" prop="disabledFlag">
+          <el-form-item label="" prop="disabledFlag">
             <el-radio-group v-model="searchData.disabledFlag" size="default">
-              <el-radio-button
-              >
-                {{ item.desc }}
-              </el-radio-button>
+              <el-radio value="">
+                全部
+              </el-radio>
+              <el-radio :value="0">
+                启用
+              </el-radio>
+              <el-radio :value="1">
+                禁用
+              </el-radio>
             </el-radio-group>
-          </el-form-item> -->
+          </el-form-item>
+
           <el-form-item prop="keywords" label="">
             <el-input v-model="searchData.keywords" placeholder="请输入" />
           </el-form-item>
@@ -290,7 +251,7 @@ function handleSubmitCancel() {
         <el-button
           type="warning"
           :icon="CirclePlus"
-          @click="openUpdateDepartmentDialog(selectedRows)"
+          @click="openUpdateDepartmentDialog()"
         >
           批量调整部门
         </el-button>
@@ -392,15 +353,13 @@ function handleSubmitCancel() {
       v-model:form-dialog-visible="formDialogVisible"
       v-model:form-data="formData"
       @submit-success="handleSubmitSuccess"
-      @submit-cancel="handleSubmitCancel"
     />
 
     <DepartmentTreeDialog
       v-model:loading="loading"
       v-model:form-dialog-visible="DepartmentTreeDialogVisible"
-      :employee-id-list="DepartmentTreeDialogData"
+      :employee-id-list="SelectedEmployeeIdList"
       @submit-success="handleSubmitSuccess"
-      @submit-cancel="handleSubmitCancel"
     />
   </div>
 </template>

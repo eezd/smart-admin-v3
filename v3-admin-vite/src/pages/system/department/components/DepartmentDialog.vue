@@ -8,7 +8,6 @@ import DepartmentTreeSelect from "@@/components/System/DepartmentTreeSelect/inde
 // #region defineEmits
 const emit = defineEmits<{
   submitSuccess: []
-  submitCancel: []
 }>()
 // #endregion
 
@@ -55,17 +54,12 @@ function handleCreateOrUpdate() {
           await departmentApi.create(formData.value as DepartmentCreateRequest)
         }
         emit("submitSuccess") // 通知父组件刷新数据
-      } finally {
         dialogVisible.value = false
+      } finally {
         loading.value = false
       }
     }
   })
-}
-
-function handleCancel() {
-  dialogVisible.value = false
-  emit("submitCancel")
 }
 </script>
 
@@ -86,7 +80,7 @@ function handleCancel() {
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="handleCancel">
+      <el-button @click="dialogVisible = false">
         取消
       </el-button>
       <el-button type="primary" :loading="loading" @click="handleCreateOrUpdate">

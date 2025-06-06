@@ -119,11 +119,6 @@ function openUpdateDialog(row: any) {
 function handleSubmitSuccess() {
   getTableData()
 }
-/**
- * 弹窗关闭执行
- */
-function handleSubmitCancel() {
-}
 // #endregion
 
 getTableData()
@@ -184,7 +179,6 @@ getTableData()
       v-model:form-dialog-visible="formDialogVisible"
       v-model:form-data="formData"
       @submit-success="handleSubmitSuccess"
-      @submit-cancel="handleSubmitCancel"
     />
   </div>
 </template>

@@ -12,7 +12,7 @@ import { ref } from "vue"
  */
 // #region defineProps
 interface Props {
-  employeeIdList: number[] | undefined
+  employeeIdList: any[]
 }
 
 const props = defineProps<Props>()
@@ -21,7 +21,6 @@ const props = defineProps<Props>()
 // #region defineEmits
 const emit = defineEmits<{
   submitSuccess: []
-  submitCancel: []
 }>()
 // #endregion
 
@@ -44,10 +43,6 @@ async function handleCreateOrUpdate() {
     // 自动获取当前选中的节点
     const currentNode = treeRef.value?.getCurrentNode()
     const selectedDepartmentId = currentNode?.departmentId
-    console.log({
-      employeeIdList: props.employeeIdList,
-      departmentId: selectedDepartmentId
-    })
     if (selectedDepartmentId === undefined) {
       ElMessage.error("请选择部门")
       return
@@ -64,17 +59,12 @@ async function handleCreateOrUpdate() {
     })
     message.success("操作成功")
     emit("submitSuccess")
+    dialogVisible.value = false
   } catch (e) {
     message.error("操作失败")
   } finally {
     loading.value = false
-    dialogVisible.value = false
   }
-}
-
-function handleCancel() {
-  dialogVisible.value = false
-  emit("submitCancel")
 }
 </script>
 
@@ -91,7 +81,7 @@ function handleCancel() {
       style="width: 100%"
     />
     <template #footer>
-      <el-button @click="handleCancel">
+      <el-button @click="dialogVisible = false">
         取消
       </el-button>
       <el-button type="primary" :loading="loading" @click="handleCreateOrUpdate">

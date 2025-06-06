@@ -1,13 +1,16 @@
 <script lang="ts" setup>
+import { useDevice } from "@/common/composables/useDevice"
 import DepartmentTree from "./components/DepartmentTree.vue"
 import EmployeeList from "./components/EmployeeList.vue"
+
+const { isMobile } = useDevice()
 
 const departmentId = ref(0)
 </script>
 
 <template>
   <div class="app-container">
-    <el-container>
+    <el-container :direction="isMobile ? 'vertical' : 'horizontal'">
       <el-aside width="200px">
         <DepartmentTree v-model:value="departmentId" />
       </el-aside>
@@ -19,25 +22,5 @@ const departmentId = ref(0)
 </template>
 
 <style lang="scss" scoped>
-.search-wrapper {
-  margin-bottom: 20px;
-  :deep(.el-card__body) {
-    padding-bottom: 2px;
-  }
-}
 
-.toolbar-wrapper {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.table-wrapper {
-  margin-bottom: 20px;
-}
-
-.pager-wrapper {
-  display: flex;
-  justify-content: flex-end;
-}
 </style>

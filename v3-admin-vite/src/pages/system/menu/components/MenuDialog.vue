@@ -11,7 +11,6 @@ import MenuTreeSelect from "./MenuTreeSelect.vue"
 // #region defineEmits
 const emit = defineEmits<{
   submitSuccess: []
-  submitCancel: []
 }>()
 // #endregion
 
@@ -87,17 +86,12 @@ function handleCreateOrUpdate() {
           await menuApi.create(formData.value)
         }
         emit("submitSuccess")
-      } finally {
         dialogVisible.value = false
+      } finally {
         loading.value = false
       }
     }
   })
-}
-
-function handleCancel() {
-  dialogVisible.value = false
-  emit("submitCancel")
 }
 
 function selectIcon(iconName: string) {
@@ -280,7 +274,7 @@ function getIconComponent(iconName: string) {
     </el-form>
 
     <template #footer>
-      <el-button @click="handleCancel">
+      <el-button @click="dialogVisible = false">
         取消
       </el-button>
       <el-button type="primary" :loading="loading" @click="handleCreateOrUpdate">

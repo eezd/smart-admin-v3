@@ -7,7 +7,6 @@ import { useDevice } from "@/common/composables/useDevice"
 // #region defineEmits
 const emit = defineEmits<{
   submitSuccess: []
-  submitCancel: []
 }>()
 // #endregion
 
@@ -47,17 +46,12 @@ function handleCreateOrUpdate() {
           await positionApi.create(formData.value as PositionCreateRequest)
         }
         emit("submitSuccess")
-      } finally {
         dialogVisible.value = false
+      } finally {
         loading.value = false
       }
     }
   })
-}
-
-function handleCancel() {
-  dialogVisible.value = false
-  emit("submitCancel")
 }
 </script>
 
@@ -78,7 +72,7 @@ function handleCancel() {
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="handleCancel">
+      <el-button @click="dialogVisible = false">
         取消
       </el-button>
       <el-button type="primary" :loading="loading" @click="handleCreateOrUpdate">
