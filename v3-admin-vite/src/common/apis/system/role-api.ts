@@ -18,7 +18,7 @@ export const roleApi = {
   /*
    * 添加角色
    */
-  addRole: (data: RoleCreateRequest) => {
+  createRole: (data: RoleCreateRequest) => {
     return request<ApiResponseData<any>>({
       url: "role/add",
       method: "POST",

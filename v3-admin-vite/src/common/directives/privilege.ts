@@ -19,8 +19,10 @@ export function privilegeDirective(el: { parentNode: { removeChild: (arg0: any) 
   // 获取功能点权限
   const userPointsList = useUserStore().getPointList()
   if (!userPointsList) {
+    console.log("用户没有任何权限")
     return false
   }
+  console.log(userPointsList)
   // 如果没有权限，删除节点
   if (!some(userPointsList, ["webPerms", binding.value])) {
     el.parentNode.removeChild(el)

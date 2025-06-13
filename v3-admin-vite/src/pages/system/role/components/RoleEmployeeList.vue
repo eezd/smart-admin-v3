@@ -8,8 +8,8 @@ import { GENDER_ENUM } from "@@/constants/common-const"
 import { CirclePlus, Delete, Refresh, Search } from "@element-plus/icons-vue"
 import { cloneDeep } from "lodash-es"
 import { reactive } from "vue"
-import DepartmentTreeDialog from "./DepartmentTreeDialog.vue"
-import EmployeeFormDialog from "./EmployeeFormDialog.vue"
+// import DepartmentTreeDialog from "./DepartmentTreeDialog.vue"
+// import EmployeeFormDialog from "./EmployeeFormDialog.vue"
 
 defineOptions({
   name: "PositionManagement"
@@ -31,7 +31,6 @@ const tableData = ref<EmployeeItem[]>([])
 async function getTableData(params?: any): Promise<void> {
   try {
     loading.value = true
-    console.log("params:", params)
     await employeeApi.queryPage({
       pageNum: paginationData.currentPage,
       pageSize: paginationData.pageSize,
@@ -113,68 +112,6 @@ function openCreateDialog() {
   formData.value = cloneDeep(formDefault)
   formDialogVisible.value = true
 }
-function openUpdateDialog(row: any) {
-  formData.value = cloneDeep(row)
-  formDialogVisible.value = true
-}
-// #endregion
-
-// #region 重置密码
-async function resetPassword(id: number, name: string): Promise<void> {
-  try {
-    await ElMessageBox.confirm("确定要重置密码吗？", "提醒", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning"
-    })
-
-    loading.value = true
-    const { data: password } = await employeeApi.resetPassword(id)
-
-    const copyText = `账号：${name}\n 密码：${password}`
-
-    try {
-      await navigator.clipboard.writeText(copyText)
-      await ElMessageBox.alert(
-        `重置成功！<br/>账号：${name}<br/>密码：${password}<br/>账号和密码已复制到剪贴板`,
-        "密码重置成功",
-        {
-          confirmButtonText: "确定",
-          type: "success",
-          dangerouslyUseHTMLString: true
-        }
-      )
-    } catch (clipboardError) {
-      await ElMessageBox.alert(
-        `重置成功！<br/>账号：${name}<br/>密码：${password}<br/>请手动复制上述信息`,
-        "密码重置成功",
-        {
-          confirmButtonText: "确定",
-          type: "success",
-          dangerouslyUseHTMLString: true
-        }
-      )
-    }
-    getTableData()
-  } catch (error) {
-    if (error !== "cancel") {
-      console.error("重置密码失败:", error)
-      ElMessage.error("密码重置失败，请稍后重试")
-    }
-  } finally {
-    loading.value = false
-  }
-}
-// #endregion
-
-// #region 部门树
-const DepartmentTreeDialogVisible = ref<boolean>(false)
-const SelectedEmployeeIdList = computed(() =>
-  selectedRows.value.map(item => item.employeeId)
-)
-function openUpdateDepartmentDialog() {
-  DepartmentTreeDialogVisible.value = true
-}
 // #endregion
 
 // #region 数据弹窗监听
@@ -250,13 +187,6 @@ watch(
           新增
         </el-button>
         <el-button
-          type="warning"
-          :icon="CirclePlus"
-          @click="openUpdateDepartmentDialog()"
-        >
-          批量调整部门
-        </el-button>
-        <el-button
           type="danger"
           :icon="Delete"
           :disabled="!hasSelectedRows"
@@ -275,23 +205,9 @@ watch(
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="50" />
-          <el-table-column prop="actualName" label="姓名" width="120" />
-          <el-table-column prop="gender" label="性别" width="70">
-            <template #default="scope">
-              {{ Object.values(GENDER_ENUM).find(item => item.value === scope.row.gender)?.desc || '未知' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="loginName" label="登录账号" width="120" />
-          <el-table-column prop="phone" label="手机号" width="115" />
-          <el-table-column prop="email" label="邮箱" width="160" />
-          <el-table-column prop="administratorFlag" label="超管" width="70">
-            <template #default="scope">
-              <el-tag v-if="scope.row.administratorFlag" type="danger">
-                超管
-              </el-tag>
-              <span v-else />
-            </template>
-          </el-table-column>
+          <el-table-column prop="actualName" label="姓名"/>
+          <el-table-column prop="loginName" label="登录账号" />
+          <el-table-column prop="phone" label="手机号"  />
           <el-table-column prop="disabledFlag" label="状态" width="70">
             <template #default="scope">
               <el-tag :type="scope.row.disabledFlag ? 'danger' : 'primary'">
@@ -299,27 +215,9 @@ watch(
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="positionName" label="职务" width="150" />
-          <el-table-column prop="roleNameList" label="角色" width="150" />
-          <el-table-column prop="departmentName" label="部门" width="250" />
-          <el-table-column fixed="right" label="操作" width="220">
+          <el-table-column prop="departmentName" label="部门"  />
+          <el-table-column fixed="right" label="操作" width="60">
             <template #default="scope">
-              <el-button
-                type="primary"
-                bg
-                size="small"
-                @click="openUpdateDialog(scope.row)"
-              >
-                修改
-              </el-button>
-              <el-button
-                type="warning"
-                bg
-                size="small"
-                @click="resetPassword(scope.row.employeeId, scope.row.loginName)"
-              >
-                重置密码
-              </el-button>
               <el-button
                 type="danger"
                 bg
@@ -349,19 +247,12 @@ watch(
     </el-card>
 
     <!-- 数据弹窗 -->
-    <EmployeeFormDialog
+    <!-- <EmployeeFormDialog
       v-model:loading="loading"
       v-model:form-dialog-visible="formDialogVisible"
       v-model:form-data="formData"
       @submit-success="handleSubmitSuccess"
-    />
-
-    <DepartmentTreeDialog
-      v-model:loading="loading"
-      v-model:form-dialog-visible="DepartmentTreeDialogVisible"
-      :employee-id-list="SelectedEmployeeIdList"
-      @submit-success="handleSubmitSuccess"
-    />
+    /> -->
   </div>
 </template>
 
